@@ -1,0 +1,80 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta property="og:title" content="">
+    <meta property="og:type" content="">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/fontawesome.css">
+    <link rel="stylesheet" href="css/solid.css">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/main.css">
+
+
+    <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-xl-6 col-sm-12">
+            <div class="row" >
+                <form hidden id="addVideoForm" class="form-inline my-4">
+                    <div class="form-group">
+                        <label for="addVideo">Add Video</label>
+                        <input id="addVideo" class="form-control ml-2"/>
+                    </div>
+                </form>
+                <form id="searchVideoForm" class="form-inline my-4">
+                    <div class="form-group">
+                        <label for="searchVideo">Search</label>
+                        <input id="searchVideo" class="form-control ml-2"/>
+                    </div>
+                </form>
+            </div>
+            <div class="row">
+                <div id="searchResultList" class="list-group col">
+                    <div id="searchResultTemplate" class="searchResult list-group-item list-group-item-action" hidden>
+                        <div class="row">
+                            <div class="searchResultThumbnail col-3">
+                            </div>
+                            <div class="col-9 searchResultTextContainer">
+                                <span class="h4 searchResultTitle">She</span><br/>
+                                <span class="searchResultChannel pr-3">Dodie - Topic</span>
+                                <span class="searchResultDescription">The most ethereal song ever produced. 100/10 best boi song ever</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 my-4 col-sm-12">
+            <span class="row"><button id="leader-button"
+                                      class="btn btn-outline-secondary disabled">No connection</button></span>
+            <div id="player" class="row py-4"></div>
+            <div id="videoList" class="list-group">
+                <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
+                    <button class="videoListCardMoveUp btn btn-outline-secondary"><i class="fa fa-caret-up"></i>
+                    </button>
+                    <button class="videoListCardMoveDown btn btn-outline-secondary"><i class="fa fa-caret-down"></i>
+                    </button>
+                    <span class="templateText"></span>
+                    <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="js/main.js" type="module"></script>
+</body>
+
+</html>

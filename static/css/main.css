@@ -1,0 +1,18 @@
+.searchResultChannel {
+    font-style: italic;
+}
+
+.searchResultDescription {
+    font-size: small;
+}
+
+.searchResult {
+    height: 126px;
+    cursor: pointer;
+}
+
+.searchResultTextContainer {
+    height: 101px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -1,0 +1,395 @@
+import { makeMessage, Resolver } from './websocketResolver.js';
+import { ListOperationTypes, MessageTypes, PlayerState } from "./enums.js";
+
+window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady
+
+const youtubeApiScript = document.createElement('script');
+
+youtubeApiScript.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(youtubeApiScript, firstScriptTag);
+
+
+const RTT_ESTIMATE = 1
+const ALLOWED_AHEAD = 5
+
+let videos = null;
+
+let videoPlaying = null;
+let state = null;
+
+let isLeader = null;
+
+let player = null;
+document.getElementById('player').append(mockPlayer('360', '640'));
+
+function onYouTubeIframeAPIReady() {
+    onYTDone();
+}
+
+
+function onPlayerReady(event) {
+    event.target.seekTo(0);
+    if (state === PlayerState.PLAYING) {
+        event.target.playVideo();
+    }
+}
+
+function onPlayerStateChange(event) {
+    console.log(event.data, YT.PlayerState, state, videoPlaying, videos);
+    if (event.data === 0 /*Ended*/) {
+        if (state !== PlayerState.PLAYING) {
+            console.warn("Player ended up in state ENDED while it is was not playing.")
+            return
+        }
+        if (isLeader && videoPlaying !== null) {
+            socket.send(makeMessage(MessageTypes.SONG_END, { id: videoPlaying.id }))
+        }
+        const vid = popVideo()
+        if (vid !== undefined) {
+            playVideo(vid);
+        } else {
+            videoPlaying = null;
+            state = PlayerState.LIST_END;
+        }
+    }
+}
+
+function onAddVideo() {
+    console.log(state, videoPlaying, videos)
+    switch (state) {
+        case PlayerState.LIST_END:
+            if (videoPlaying === null) {
+                playVideo(popVideo());
+            } else {
+                console.error(`Invalid state: state=${state}; videoPlaying=${videoPlaying}`)
+                return
+            }
+            break
+        case PlayerState.PAUSED:
+            if (videoPlaying === null) {
+                loadVideo(popVideo())
+            }
+            break
+        case PlayerState.PLAYING:
+            if (videoPlaying === null) {
+                playVideo(popVideo())
+            }
+            break
+        default:
+            console.error("Unknown state", state)
+            break
+    }
+}
+
+function addVideo(code, id) {
+    videos.push({ code, id });
+    makeQueueLine(code, id);
+    onAddVideo();
+}
+
+function popVideo() {
+    console.log("pop", videos)
+    const vid = videos.shift();
+    if (vid !== undefined) {
+        queueElement.removeChild(queueElement.querySelector(".videoListCard"));
+    } else {
+        state = PlayerState.LIST_END
+    }
+    return vid;
+}
+
+function findVideoIndex(id) {
+    return videos.findIndex(function (vid) {
+        return vid.id === id
+    })
+}
+
+function delVideo(id) {
+    videos.splice(findVideoIndex(id), 1)
+    removeQueueLine(id)
+}
+
+function moveVideo(id, displacement) {
+    const i = findVideoIndex(id)
+    const [vid] = videos.splice(i, 1)
+
+    const new_i = i + displacement
+    videos.splice(new_i, 0, vid)
+    removeQueueLine(id)
+
+    if (new_i + 1 === videos.length) {
+        makeQueueLine(vid.code, id)
+    } else {
+        console.log(videos, new_i)
+        makeQueueLine(vid.code, id, videos[new_i + 1].id)
+    }
+
+}
+
+function playVideo(vid) {
+    videoPlaying = vid;
+    state = PlayerState.PLAYING
+
+    if (player === null) {
+        buildPlayer('360', '640', vid.code);
+    } else {
+        player.loadVideoById(vid.code, 0);
+    }
+}
+
+function loadVideo(vid) {
+    videoPlaying = vid;
+
+    if (player === null) {
+        buildPlayer('360', '640', vid.code);
+    } else {
+        player.cueVideoById(vid.code, 0);
+    }
+}
+
+function setLeader(b) {
+    console.log(isLeader, b)
+    if (isLeader !== b) {
+        let btn = document.getElementById("leader-button");
+        btn.innerText = b ? "Leader" : "Follower";
+        btn.classList.remove(b ? "btn-outline-success" : "btn-success")
+        btn.classList.add(b ? "btn-success" : "btn-outline-success")
+        if (isLeader === null) {
+            btn.classList.remove("disabled", "btn-outline-secondary")
+        }
+        isLeader = b;
+    }
+}
+
+window.setLeader = setLeader
+
+function mockPlayer(height, width) {
+    const rect = document.createElement('div');
+    rect.setAttribute('style', `height:${height}px;width:${width}px;background:black`);
+    return rect
+}
+
+function buildPlayer(height, width, id) {
+    player = new YT.Player('player', {
+        height: parseInt(height) + 48,
+        width: width,
+        videoId: id,
+        playerVars: {},
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange,
+        }
+    });
+    window.player = player
+}
+
+const queueElement = document.getElementById('videoList')
+const queueLine = document.getElementById('videoListCardTemplate')
+
+function makeQueueLine(code, id, before_id) {
+    let newQueueLine = queueLine.cloneNode(true);
+    newQueueLine.id = "";
+    newQueueLine.hidden = false;
+    newQueueLine.querySelector('.templateText').innerText = code;
+    newQueueLine.setAttribute("data-id", id)
+
+    function delHandler(event) {
+        onDeleteClick(event, id)
+    }
+
+    const delButton = newQueueLine.querySelector('.videoListCardDelete')
+    delButton.addEventListener("click", delHandler)
+    delButton.addEventListener("keydown", delHandler)
+
+    function moveUpHandler(event) {
+        onMoveClick(event, id, -1)
+    }
+
+    const upButton = newQueueLine.querySelector('.videoListCardMoveUp')
+    upButton.addEventListener("click", moveUpHandler)
+    upButton.addEventListener("keydown", moveUpHandler)
+
+    function moveDownHandler(event) {
+        onMoveClick(event, id, 1)
+    }
+
+    const downButton = newQueueLine.querySelector('.videoListCardMoveDown')
+    downButton.addEventListener("click", moveDownHandler)
+    downButton.addEventListener("keydown", moveDownHandler)
+
+    if (before_id == null) {
+        queueLine.before(newQueueLine);
+    } else {
+        queueElement.querySelector(`[data-id='${before_id}']`).before(newQueueLine)
+    }
+}
+
+function removeQueueLine(id) {
+    const card = queueElement.querySelector(`div[data-id='${id}']`);
+    queueElement.removeChild(card);
+}
+
+function onSubmit(event) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
+        op: ListOperationTypes.ADD,
+        code: event.target[0].value
+    }))
+}
+
+function onSearch(event) {
+    event.preventDefault();
+    const q = event.target[0].value
+    if (q !== "") {
+        socket.send(makeMessage(MessageTypes.SEARCH, {q}))
+    }
+}
+
+function onDeleteClick(event, id) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.DEL, id }))
+}
+
+function onMoveClick(event, id, displacement) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.MOVE, id, displacement }))
+}
+
+function onLeaderbutton(event) {
+    if (isLeader) {
+        socket.send(makeMessage(MessageTypes.RELEASE_CONTROL))
+    } else {
+        socket.send(makeMessage(MessageTypes.OBTAIN_CONTROL))
+    }
+}
+
+function stateProcessor(ws, data) {
+    const { playing, state: newState, list } = data;
+
+    videos = []
+    state = newState
+    videoPlaying = playing
+
+    for (const song of list) {
+        const {code, id} = song
+        addVideo(code, id)
+    }
+
+    if (videoPlaying !== null) {
+        if (state === PlayerState.PLAYING) {
+            playVideo(videoPlaying)
+        } else {
+            loadVideo(videoPlaying)
+        }
+    }
+    if (isLeader === null) {
+        setLeader(false)
+    }
+    afterStateInit()
+}
+
+function listOperationProcessor(ws, data) {
+    const { op, id } = data;
+    if (op === ListOperationTypes.ADD) {
+        const { code } = data;
+        addVideo(code, id);
+    } else if (op === ListOperationTypes.DEL) {
+        delVideo(id);
+    } else if (op === ListOperationTypes.MOVE) {
+        const { displacement } = data
+        moveVideo(id, displacement)
+    }
+}
+
+function songEndProcessor(ws, data) {
+    const { ended_id, current_id } = data;
+    console.log(ended_id, current_id)
+    if (videoPlaying === null) {
+        // Do nothing
+    } else if (ended_id === videoPlaying.id) {
+        const vid = popVideo()
+        console.log(vid)
+        if (vid !== undefined) {
+            playVideo(vid);
+        } else {
+            videoPlaying = null;
+            state = PlayerState.LIST_END
+            // TODO SEEK TO END
+        }
+    } else if (current_id === videoPlaying.id) {
+        if (!isLeader && player.getCurrentTime() - RTT_ESTIMATE - ALLOWED_AHEAD > 0) {
+            player.seekTo(RTT_ESTIMATE + ALLOWED_AHEAD, true)
+        }
+    } else {
+        console.error("Difficult state reached. Reset protocol not implemented. Either to far ahead, behind or state inconsistency", ended_id, current_id, videoPlaying)
+    }
+}
+
+
+const searchResultTemplate = document.getElementById("searchResultTemplate")
+const searchResultList = searchResultTemplate.parentElement
+searchResultList.removeChild(searchResultTemplate)
+searchResultTemplate.id = ""
+
+function makeSearchResult(item) {
+    const { id, snippet } = item
+    const { videoId } = id
+    const { thumbnails, title, channelTitle, publishTime, description } = snippet
+
+    const searchResult = searchResultTemplate.cloneNode(true)
+    searchResult.setAttribute('data-youtubeID', videoId)
+    function onClickHandler() {
+        socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
+            op: ListOperationTypes.ADD,
+            code: videoId
+        }))
+    }
+    searchResult.addEventListener("click", onClickHandler)
+    searchResult.addEventListener("keydown", onClickHandler)
+
+    const thumbnail = searchResult.getElementsByClassName("searchResultThumbnail")[0]
+    const img = document.createElement('img')
+    thumbnail.appendChild(img)
+    img.setAttribute('src', thumbnails.default.url)
+    img.setAttribute('width', thumbnails.default.width)
+    img.setAttribute('height', thumbnails.default.height)
+    img.setAttribute('alt', "")
+
+    searchResult.getElementsByClassName("searchResultTitle")[0].innerText = title
+    searchResult.getElementsByClassName("searchResultChannel")[0].innerText = channelTitle
+    searchResult.getElementsByClassName("searchResultDescription")[0].innerText = description
+    searchResult.removeAttribute('hidden')
+
+    searchResultList.appendChild(searchResult)
+}
+
+function searchResultProcessor(_, data) {
+    const { items } = data;
+    searchResultList.innerHTML = '';
+    for (const item of items) {
+        makeSearchResult(item)
+    }
+}
+
+let socket;
+
+function onYTDone() {
+    const resolver = new Resolver()
+    resolver.register(MessageTypes.STATE, stateProcessor)
+    resolver.register(MessageTypes.LIST_OPERATION, listOperationProcessor)
+    resolver.register(MessageTypes.OBTAIN_CONTROL, () => setLeader(true))
+    resolver.register(MessageTypes.RELEASE_CONTROL, () => setLeader(false))
+    resolver.register(MessageTypes.SONG_END, songEndProcessor)
+    resolver.register(MessageTypes.SEARCH, searchResultProcessor)
+    socket = resolver.connectSocket()
+    socket.addEventListener("open", function () {
+        socket.send(makeMessage(MessageTypes.STATE, null))
+    })
+}
+
+function afterStateInit() {
+    // document.getElementById('addVideoForm').addEventListener('submit', onSubmit);
+    document.getElementById('searchVideoForm').addEventListener('submit', onSearch)
+    document.getElementById('leader-button').addEventListener('click', onLeaderbutton)
+}
