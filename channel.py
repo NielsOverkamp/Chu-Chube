@@ -1,5 +1,11 @@
+from typing import List
+
+
 class Channel:
-    subscribers = []
+    subscribers: List
+
+    def __init__(self):
+        self.subscribers = []
 
     def subscribe(self, ws):
         self.subscribers.append(ws)

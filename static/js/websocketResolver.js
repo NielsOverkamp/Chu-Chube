@@ -1,5 +1,9 @@
 const PORT = 3821
 const HOST = location.hostname
+const PATH = new URLSearchParams(location.search).get("room")
+if (PATH === "" || PATH === undefined || PATH === null) {
+    location = "/";
+}
 
 export class Resolver {
     registerMap = new Map()
@@ -42,7 +46,7 @@ export class Resolver {
 
     connectSocket() {
         const self = this;
-        const socket = new WebSocket(`ws://${HOST}:${PORT}`)
+        const socket = new WebSocket(`ws://${HOST}:${PORT}/${PATH}`)
 
         function handler(event) {
             self.resolve(event.data, socket)

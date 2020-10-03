@@ -52,7 +52,7 @@ class Resolver:
                 while True:
                     message = await websocket.recv()
                     processor, body = self.resolve(message)
-                    await processor(websocket, body)
+                    await processor(websocket, body, path)
             except websockets.ConnectionClosedOK:
                 await on_close_handler(websocket, path)
 

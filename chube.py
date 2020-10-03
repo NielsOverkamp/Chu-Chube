@@ -1,7 +1,9 @@
 from threading import RLock
+from typing import Optional, Iterator, Dict, List
 
 import sys
 from itertools import cycle
+from websockets import WebSocketServerProtocol
 
 import chube_search
 from channel import Channel
@@ -10,10 +12,16 @@ from chube_ws import Resolver, Message, start_server, make_message
 
 
 class Chueue:
-    _lock = RLock()
-    _queue = []
-    _codes = dict()
-    _id_iter = cycle(range(sys.maxsize))
+    _lock: RLock
+    _queue: List[int]
+    _codes: Dict[int, str]
+    _id_iter: Iterator[int]
+
+    def __init__(self):
+        self._lock = RLock()
+        self._queue = []
+        self._codes = dict()
+        self._id_iter = cycle(range(sys.maxsize))
 
     def add(self, code):
         with self:
@@ -71,9 +79,12 @@ class Chueue:
 
 
 class Playback:
-    _song = None
+    _song: Optional[Dict] = None
     _state: PlayerState = PlayerState.LIST_END
-    lock = RLock()
+    lock: RLock()
+
+    def __init__(self):
+        self.lock = RLock()
 
     def set_song(self, song):
         with self.lock:
@@ -98,18 +109,26 @@ class Playback:
 
 
 class Room:
-    chueue = Chueue()
-    channel = Channel()
-    controller = None
-    controller_lock = RLock()
-    playback = Playback()
+    chueue: Chueue
+    channel: Channel
+    controller: Optional[WebSocketServerProtocol]
+    controller_lock: RLock
+    playback: Playback
+
+    def __init__(self):
+        self.chueue = Chueue()
+        self.channel = Channel()
+        self.controller_lock = RLock()
+        self.playback = Playback()
+        self.controller = None
+
 
 
 rooms = {}
 
 
-async def request_state_processor(ws, data):
-    room = rooms["main"]
+async def request_state_processor(ws, data, path):
+    room = rooms[path]
     await ws.send(make_message(Message.STATE, {
         "list": room.chueue.as_list(),
         "playing": room.playback.get_song(),
@@ -117,8 +136,8 @@ async def request_state_processor(ws, data):
     }))
 
 
-async def request_list_operation_processor(ws, data):
-    room = rooms["main"]
+async def request_list_operation_processor(ws, data, path):
+    room = rooms[path]
     chueue = room.chueue
     op = data["op"]
     message = None
@@ -146,13 +165,13 @@ async def request_list_operation_processor(ws, data):
         await room.channel.send(message)
 
 
-async def obtain_control_processor(ws, data):
-    room = rooms["main"]
+async def obtain_control_processor(ws, data, path):
+    room = rooms[path]
     await obtain_control(ws, room)
 
 
-async def release_control_processor(ws, data):
-    room = rooms["main"]
+async def release_control_processor(ws, data, path):
+    room = rooms[path]
     if len(room.channel.subscribers) > 1:
         await release_control(ws, room)
     else:
@@ -160,8 +179,8 @@ async def release_control_processor(ws, data):
         # TODO error here
 
 
-async def song_end_processor(ws, data):
-    room = rooms["main"]
+async def song_end_processor(ws, data, path):
+    room = rooms[path]
     old_song_id = data["id"]
     with room.controller_lock, room.playback.lock:
         if ws is room.controller and old_song_id == room.playback.get_song_id():
@@ -175,8 +194,8 @@ async def song_end_processor(ws, data):
             await room.channel.send(make_message(Message.SONG_END, {"ended_id": old_song_id, "current_id": new_song_id}))
 
 
-async def playback_processor(ws, data):
-    room = rooms["main"]
+async def playback_processor(ws, data, path):
+    room = rooms[path]
 
 
 # TODO There is some potential concurrent bug here, when the controller loses/releases control right before a song end.
@@ -203,7 +222,9 @@ async def release_control(ws, room):
 
 
 async def on_connect(ws, path):
-    room = rooms["main"]
+    if path not in rooms:
+        rooms[path] = Room()
+    room = rooms[path]
     room.channel.subscribe(ws)
     with room.controller_lock:
         if room.controller is None:
@@ -216,7 +237,7 @@ async def on_connect(ws, path):
 
 
 async def on_disconnect(ws, path):
-    room = rooms["main"]
+    room = rooms[path]
     room.channel.unsubscribe(ws)
     await release_control(ws, room)
     # with room.controller_lock:
@@ -240,8 +261,8 @@ def make_resolver():
 
 
 def init_rooms():
-    rooms["main"] = Room()
-
+    # rooms["main"] = Room()
+    pass
 
 if __name__ == "__main__":
     player_resolver = make_resolver()

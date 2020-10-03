@@ -11,7 +11,7 @@ URL = "https://www.googleapis.com/youtube/v3/search"
 base_query = [('part', 'snippet'), ('type', 'video'), ('videoEmbeddable', 'true'), ('safeSearch', 'none'), ('key', API_KEY)]
 
 
-async def search_processor(ws, data):
+async def search_processor(ws, data, path):
     async with aiohttp.ClientSession() as session:
         async with session.get(URL, params=base_query + [('q', data['q'])]) as response:
             json_data = await response.json()
