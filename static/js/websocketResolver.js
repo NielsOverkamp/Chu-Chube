@@ -1,4 +1,5 @@
 const PORT = 3821
+const HOST = location.hostname
 
 export class Resolver {
     registerMap = new Map()
@@ -41,7 +42,7 @@ export class Resolver {
 
     connectSocket() {
         const self = this;
-        const socket = new WebSocket(`ws://localhost:${PORT}`)
+        const socket = new WebSocket(`ws://${HOST}:${PORT}`)
 
         function handler(event) {
             self.resolve(event.data, socket)

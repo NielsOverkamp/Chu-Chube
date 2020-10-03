@@ -1,11 +1,13 @@
 import asyncio
 import json
+import os
 
 import websockets
 
 from chube_enums import Message
 
-PORT = 3821  # CHU
+PORT = os.environ.get("CHUBE_WS_PORT") or 3821  # CHU
+HOST = os.environ.get("CHUBE_WS_HOST") or "localhost"
 
 
 class Resolver:
@@ -68,6 +70,6 @@ def make_message(message_type, body=None):
 def start_server(resolver: Resolver, on_new_connection, on_connection_close):
     ws_server = websockets.serve(
         resolver.make_handler(on_open=on_new_connection, on_close=on_connection_close),
-        "localhost", PORT)
+        HOST, PORT)
     asyncio.get_event_loop().run_until_complete(ws_server)
     asyncio.get_event_loop().run_forever()
