@@ -36,8 +36,8 @@
                 </form>
                 <form id="searchVideoForm" class="form-inline my-4">
                     <div class="form-group">
-                        <label for="searchVideo">Search</label>
-                        <input id="searchVideo" class="form-control ml-2"/>
+                        <label for="searchVideo" class="sr-only">Search</label>
+                        <input id="searchVideo" class="form-control ml-2" placeholder="Search"/>
                     </div>
                 </form>
             </div>
@@ -45,8 +45,7 @@
                 <div id="searchResultList" class="list-group col">
                     <div id="searchResultTemplate" class="searchResult list-group-item list-group-item-action" hidden>
                         <div class="row">
-                            <div class="searchResultThumbnail col-3">
-                            </div>
+                            <div class="searchResultThumbnail col-3"></div>
                             <div class="col-9 searchResultTextContainer">
                                 <span class="h4 searchResultTitle">She</span><br/>
                                 <span class="searchResultChannel pr-3">Dodie - Topic</span>
@@ -63,17 +62,27 @@
             <div id="player" class="row py-4"></div>
             <div id="videoList" class="list-group">
                 <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
-                    <button class="videoListCardMoveUp btn btn-outline-secondary"><i class="fa fa-caret-up"></i>
-                    </button>
-                    <button class="videoListCardMoveDown btn btn-outline-secondary"><i class="fa fa-caret-down"></i>
-                    </button>
-                    <span class="templateText"></span>
-                    <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                    <div class="row">
+                        <div class="col-1">
+                            <div class="videoListCardMoveUp"><i class="fa fa-caret-up"></i></div>
+                            <div class="videoListCardMoveDown"><i class="fa fa-caret-down"></i></div>
+                        </div>
+                        <div class="videoListCardThumbnail col-3"></div>
+                        <div class="col-7 videoListCardTextContainer">
+                            <span class="h4 videoListCardTitle"></span><br/>
+                            <span class="videoListCardChannel pr-3"></span>
+                            <span class="videoListCardDescription"></span>
+                        </div>
+                        <div class="col-1">
+                            <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<footer class="footer mb-4"><a href="https://github.com/NielsOverkamp/Chu-Chube">Made by Niels Overkamp</a></footer>
 <script src="js/main.js" type="module"></script>
 </body>
 

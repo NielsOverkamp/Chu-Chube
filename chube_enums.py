@@ -14,6 +14,7 @@ class Message(Enum):
     RELEASE_CONTROL = "RELEASE_CONTROL"
     # SEARCH
     SEARCH = "SEARCH"
+    SEARCH_ID = "SEARCH_ID"
 
 
 # List Operations

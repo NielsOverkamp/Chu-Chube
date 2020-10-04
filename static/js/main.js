@@ -23,6 +23,8 @@ let isLeader = null;
 let player = null;
 document.getElementById('player').append(mockPlayer('360', '640'));
 
+const codeInfoMap = new Map()
+
 function onYouTubeIframeAPIReady() {
     onYTDone();
 }
@@ -191,8 +193,25 @@ function makeQueueLine(code, id, before_id) {
     let newQueueLine = queueLine.cloneNode(true);
     newQueueLine.id = "";
     newQueueLine.hidden = false;
-    newQueueLine.querySelector('.templateText').innerText = code;
     newQueueLine.setAttribute("data-id", id)
+    if (codeInfoMap.has(code)) {
+        const { id, snippet } = codeInfoMap.get(code)
+        const { thumbnails, title, channelTitle, publishTime, description } = snippet
+
+        const thumbnail = newQueueLine.getElementsByClassName("videoListCardThumbnail")[0]
+        const img = document.createElement('img')
+        thumbnail.appendChild(img)
+        img.setAttribute('src', thumbnails.default.url)
+        img.setAttribute('width', thumbnails.default.width)
+        img.setAttribute('height', thumbnails.default.height)
+        img.setAttribute('alt', "")
+
+        newQueueLine.getElementsByClassName("videoListCardTitle")[0].innerText = title
+        newQueueLine.getElementsByClassName("videoListCardChannel")[0].innerText = channelTitle
+        newQueueLine.getElementsByClassName("videoListCardDescription")[0].innerText = description.replace(/\n/g, " ")
+    }
+
+    newQueueLine.setAttribute("data-youtubeId", code)
 
     function delHandler(event) {
         onDeleteClick(event, id)
@@ -271,10 +290,16 @@ function stateProcessor(ws, data) {
     state = newState
     videoPlaying = playing
 
+    const codes = []
     for (const song of list) {
         const {code, id} = song
         addVideo(code, id)
+        if (!(codes.includes(code))) {
+            codes.push(code)
+        }
     }
+
+    socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: codes}))
 
     if (videoPlaying !== null) {
         if (state === PlayerState.PLAYING) {
@@ -294,6 +319,9 @@ function listOperationProcessor(ws, data) {
     if (op === ListOperationTypes.ADD) {
         const { code } = data;
         addVideo(code, id);
+        if (!codeInfoMap.has(code)) {
+            socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: code}))
+        }
     } else if (op === ListOperationTypes.DEL) {
         delVideo(id);
     } else if (op === ListOperationTypes.MOVE) {
@@ -343,7 +371,8 @@ function makeSearchResult(item) {
         socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
             op: ListOperationTypes.ADD,
             code: videoId
-        }))
+        }));
+        codeInfoMap.set(videoId, item)
     }
     searchResult.addEventListener("click", onClickHandler)
     searchResult.addEventListener("keydown", onClickHandler)
@@ -372,6 +401,23 @@ function searchResultProcessor(_, data) {
     }
 }
 
+function searchIdResultProcessor(_, data) {
+    const { items } = data;
+    for (const item of items) {
+        console.log(item)
+        const code = item.id;
+        codeInfoMap.set(code, item);
+        const lines = queueElement.querySelectorAll(`[data-youtubeID='${code}`)
+        for (const line of lines) {
+            if (line !== null) {
+                const id = parseInt(line.getAttribute("data-id"))
+                makeQueueLine(code, id, id)
+                line.parentElement.removeChild(line)
+            }
+        }
+    }
+}
+
 let socket;
 
 function onYTDone() {
@@ -382,6 +428,7 @@ function onYTDone() {
     resolver.register(MessageTypes.RELEASE_CONTROL, () => setLeader(false))
     resolver.register(MessageTypes.SONG_END, songEndProcessor)
     resolver.register(MessageTypes.SEARCH, searchResultProcessor)
+    resolver.register(MessageTypes.SEARCH_ID, searchIdResultProcessor)
     socket = resolver.connectSocket()
     socket.addEventListener("open", function () {
         socket.send(makeMessage(MessageTypes.STATE, null))

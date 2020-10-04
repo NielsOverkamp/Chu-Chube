@@ -5,7 +5,8 @@ export const MessageTypes = {
     SONG_END: "SONG_END",
     OBTAIN_CONTROL: "OBTAIN_CONTROL",
     RELEASE_CONTROL: "RELEASE_CONTROL",
-    SEARCH: "SEARCH"
+    SEARCH: "SEARCH",
+    SEARCH_ID: "SEARCH_ID"
 }
 
 export const ListOperationTypes = {

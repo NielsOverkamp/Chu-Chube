@@ -9,20 +9,23 @@ body {
 
 input, select, textarea, button{font-family:inherit;}
 
-.searchResultChannel {
+.searchResultChannel, .videoListCardChannel {
     font-style: italic;
 }
 
-.searchResultDescription {
+.searchResultDescription, .videoListCardDescription {
     font-size: small;
 }
 
 .searchResult {
-    height: 126px;
     cursor: pointer;
 }
 
-.searchResultTextContainer {
+.searchResult, .videoListCard {
+    height: 126px;
+}
+
+.searchResultTextContainer, .videoListCardTextContainer {
     height: 101px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -36,4 +39,51 @@ input, select, textarea, button{font-family:inherit;}
     right: 0;
 
     margin: auto;
+}
+
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+}
+
+.footer a {
+    color: gray;
+    font-size: small;
+}
+
+.videoListCardMoveUp {
+    margin-top: 21px;
+    margin-bottom: 11px
+}
+
+.videoListCardMoveUp, .videoListCardMoveDown {
+    text-align: center;
+    font-size: small;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.videoListCardMoveUp:hover, .videoListCardMoveDown:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.videoListCardMoveUp i, .videoListCardMoveDown i {
+    margin-top: 5px
+}
+
+.videoListCardDelete {
+    margin-left: -15px
+}
+
+.videoListCardThumbnail {
+    margin-top: 5px;
 }
