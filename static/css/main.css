@@ -9,11 +9,21 @@
     }
 }
 
+.container {
+    margin-top: 80px
+}
+
 body {
     font-family: "Open Sans", sans-serif;
 }
 
 input, select, textarea, button{font-family:inherit;}
+
+#logo {
+    position: absolute;
+    top: 20px;
+    left: 20px
+}
 
 #playerPlaceholder {
     width: 640px;
