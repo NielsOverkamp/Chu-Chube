@@ -13,10 +13,9 @@
     <meta property="og:image" content="">
 
     <link rel="stylesheet" href="css/normalize.css">
-    <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/fontawesome.css">
     <link rel="stylesheet" href="css/solid.css">
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.css">
     <link rel="stylesheet" href="css/main.css">
 
 
@@ -57,24 +56,48 @@
             </div>
         </div>
         <div class="col-xl-6 my-4 col-sm-12">
-            <span class="row"><button id="leader-button"
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-link btn-sm text-secondary" id="showPlayerPlaceholder" hidden>Show</button>
+                    <div id="playerPlaceholder" class="d-flex justify-content-center my-4">
+                        <div>
+                            <button class="btn btn-outline-secondary" id="startPlayerButton">Start Player</button><br/>
+                            <button class="btn btn-link btn-sm small text-secondary" id="hidePlayerPlaceholder" style="width:100%">Hide</button>
+                        </div>
+                    </div>
+                    <div id="playerContainer" class="py-4" hidden>
+                        <div class="row justify-content-between">
+                            <span class="col-2"><button id="leader-button"
                                       class="btn btn-outline-secondary disabled">No connection</button></span>
-            <div id="player" class="row py-4"></div>
-            <div id="videoList" class="list-group">
-                <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
-                    <div class="row">
-                        <div class="col-1">
-                            <div class="videoListCardMoveUp"><i class="fa fa-caret-up"></i></div>
-                            <div class="videoListCardMoveDown"><i class="fa fa-caret-down"></i></div>
+                            <span class="col-1">
+                                <a href="#" id="closePlayer">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </span>
                         </div>
-                        <div class="videoListCardThumbnail col-3"></div>
-                        <div class="col-7 videoListCardTextContainer">
-                            <span class="h4 videoListCardTitle"></span><br/>
-                            <span class="videoListCardChannel pr-3"></span>
-                            <span class="videoListCardDescription"></span>
-                        </div>
-                        <div class="col-1">
-                            <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                        <div id="player" class="pt-4"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div id="videoList" class="list-group">
+                        <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
+                            <div class="row">
+                                <div class="col-1">
+                                    <div class="videoListCardMoveUp"><i class="fa fa-caret-up"></i></div>
+                                    <div class="videoListCardMoveDown"><i class="fa fa-caret-down"></i></div>
+                                </div>
+                                <div class="videoListCardThumbnail col-3"></div>
+                                <div class="col-7 videoListCardTextContainer">
+                                    <span class="h4 videoListCardTitle"></span><br/>
+                                    <span class="videoListCardChannel pr-3"></span>
+                                    <span class="videoListCardDescription"></span>
+                                </div>
+                                <div class="col-1">
+                                    <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

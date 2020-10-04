@@ -3,11 +3,30 @@
     src: url("../webfonts/kenyc.ttf");
 }
 
+@media (min-width: 1500px) {
+    .container, .container-sm, .container-md, .container-lg, .container-xl {
+        max-width: 1440px;
+    }
+}
+
 body {
     font-family: "Open Sans", sans-serif;
 }
 
 input, select, textarea, button{font-family:inherit;}
+
+#playerPlaceholder {
+    width: 640px;
+    height: 422px;
+    border: dashed lightgray;
+    border-radius: 5%;
+    padding-top: 192px;
+}
+
+#closePlayer {
+    font-size: 18pt;
+    color: black;
+}
 
 .searchResultChannel, .videoListCardChannel {
     font-style: italic;
@@ -31,7 +50,7 @@ input, select, textarea, button{font-family:inherit;}
     text-overflow: ellipsis;
 }
 
-.pageCenter {
+.absoluteCenter {
     position: absolute;
     top:0;
     bottom: 0;

@@ -13,6 +13,9 @@ firstScriptTag.parentNode.insertBefore(youtubeApiScript, firstScriptTag);
 const RTT_ESTIMATE = 1
 const ALLOWED_AHEAD = 5
 
+const PLAYER_WIDTH = 640
+const PLAYER_HEIGHT = 360
+
 let videos = null;
 
 let videoPlaying = null;
@@ -21,6 +24,7 @@ let state = null;
 let isLeader = null;
 
 let player = null;
+let playerActive = false;
 document.getElementById('player').append(mockPlayer('360', '640'));
 
 const codeInfoMap = new Map()
@@ -133,8 +137,12 @@ function playVideo(vid) {
     videoPlaying = vid;
     state = PlayerState.PLAYING
 
+    if (!playerActive) {
+        return;
+    }
+
     if (player === null) {
-        buildPlayer('360', '640', vid.code);
+        buildPlayer(PLAYER_HEIGHT, PLAYER_WIDTH, vid.code);
     } else {
         player.loadVideoById(vid.code, 0);
     }
@@ -143,8 +151,12 @@ function playVideo(vid) {
 function loadVideo(vid) {
     videoPlaying = vid;
 
+    if (!playerActive) {
+        return
+    }
+
     if (player === null) {
-        buildPlayer('360', '640', vid.code);
+        buildPlayer(PLAYER_WIDTH, PLAYER_HEIGHT, vid.code);
     } else {
         player.cueVideoById(vid.code, 0);
     }
@@ -174,7 +186,7 @@ function mockPlayer(height, width) {
 
 function buildPlayer(height, width, id) {
     player = new YT.Player('player', {
-        height: parseInt(height) + 48,
+        height: height + 48,
         width: width,
         videoId: id,
         playerVars: {},
@@ -281,6 +293,64 @@ function onLeaderbutton(event) {
     } else {
         socket.send(makeMessage(MessageTypes.OBTAIN_CONTROL))
     }
+}
+
+const playerPlaceholder = document.getElementById('playerPlaceholder');
+const playerPlaceholderParent = playerPlaceholder.parentElement;
+
+const playerContainer = document.getElementById('playerContainer')
+
+const showPlaceholderButton = document.getElementById('showPlayerPlaceholder');
+
+function onPlayerStart(event) {
+    event.preventDefault();
+    playerActive = true;
+    playerPlaceholderParent.removeChild(playerPlaceholder)
+    playerContainer.toggleAttribute("hidden")
+    switch (state) {
+        case PlayerState.LIST_END:
+            break;
+        case PlayerState.PAUSED:
+            if (videoPlaying !== null) {
+                loadVideo(videoPlaying);
+            }  else {
+                console.error(`Invalid state: state=${state}; videoPlaying=${videoPlaying}`)
+                return
+            }
+            break;
+        case PlayerState.PLAYING:
+            if (videoPlaying !== null) {
+                playVideo(videoPlaying);
+            }  else {
+                console.error(`Invalid state: state=${state}; videoPlaying=${videoPlaying}`)
+                return
+            }
+            break;
+    }
+    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, {enabled: true}))
+}
+
+function onPlayerClose(event) {
+    event.preventDefault();
+    playerActive = false;
+    playerContainer.toggleAttribute("hidden")
+    playerPlaceholderParent.appendChild(playerPlaceholder)
+    if (player !== null) {
+        player.pauseVideo();
+    }
+    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, {enabled: false}))
+}
+
+function hidePlayerPlaceholder(event) {
+    event.preventDefault();
+    playerPlaceholderParent.removeChild(playerPlaceholder);
+    showPlaceholderButton.toggleAttribute("hidden")
+}
+
+function showPlayerPlaceholder(event) {
+    event.preventDefault();
+    playerPlaceholderParent.appendChild(playerPlaceholder);
+    showPlaceholderButton.toggleAttribute("hidden")
 }
 
 function stateProcessor(ws, data) {
@@ -439,4 +509,8 @@ function afterStateInit() {
     // document.getElementById('addVideoForm').addEventListener('submit', onSubmit);
     document.getElementById('searchVideoForm').addEventListener('submit', onSearch)
     document.getElementById('leader-button').addEventListener('click', onLeaderbutton)
+    document.getElementById('startPlayerButton').addEventListener('click', onPlayerStart)
+    document.getElementById('closePlayer').addEventListener('click', onPlayerClose)
+    document.getElementById('hidePlayerPlaceholder').addEventListener('click', hidePlayerPlaceholder)
+    document.getElementById('showPlayerPlaceholder').addEventListener('click', showPlayerPlaceholder)
 }

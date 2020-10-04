@@ -6,7 +6,7 @@ from itertools import cycle
 from websockets import WebSocketServerProtocol
 
 import chube_search
-from channel import Channel
+from channel import Channel, Subscriber
 from chube_enums import *
 from chube_ws import Resolver, Message, start_server, make_message
 
@@ -111,7 +111,7 @@ class Playback:
 class Room:
     chueue: Chueue
     channel: Channel
-    controller: Optional[WebSocketServerProtocol]
+    controller: Optional[Subscriber]
     controller_lock: RLock
     playback: Playback
 
@@ -123,8 +123,7 @@ class Room:
         self.controller = None
 
 
-
-rooms = {}
+rooms: Dict[str, Room] = dict()
 
 
 async def request_state_processor(ws, data, path):
@@ -183,7 +182,7 @@ async def song_end_processor(ws, data, path):
     room = rooms[path]
     old_song_id = data["id"]
     with room.controller_lock, room.playback.lock:
-        if ws is room.controller and old_song_id == room.playback.get_song_id():
+        if room.controller is not None and ws is room.controller.ws and old_song_id == room.playback.get_song_id():
             new_song = room.chueue.pop()
             room.playback.set_song(new_song)
             if new_song is None:
@@ -191,33 +190,42 @@ async def song_end_processor(ws, data, path):
                 new_song_id = None
             else:
                 new_song_id = new_song["id"]
-            await room.channel.send(make_message(Message.SONG_END, {"ended_id": old_song_id, "current_id": new_song_id}))
+            await room.channel.send(
+                make_message(Message.SONG_END, {"ended_id": old_song_id, "current_id": new_song_id}))
 
 
 async def playback_processor(ws, data, path):
     room = rooms[path]
 
 
+async def player_enabled_processor(ws, data, path):
+    room = rooms[path]
+    room.channel.subscribers[ws].player_enabled = data["enabled"]
+    if data["enabled"]:
+        with room.controller_lock:
+            if room.controller is None:
+                await obtain_control(ws, room)
+    else:
+        await release_control(ws, room)
+
+
 # TODO There is some potential concurrent bug here, when the controller loses/releases control right before a song end.
-async def obtain_control(ws, room):
+async def obtain_control(ws, room: Room):
     with room.controller_lock:
-        if room.controller is not ws:
+        if room.controller is None or room.controller.ws is not ws:
             prev_controller = room.controller
-            room.controller = ws
+            room.controller = room.channel.subscribers[ws]
             await ws.send(make_message(Message.OBTAIN_CONTROL))
             if prev_controller is not None:
-                await prev_controller.send(make_message(Message.RELEASE_CONTROL))
+                await prev_controller.ws.send(make_message(Message.RELEASE_CONTROL))
 
 
-async def release_control(ws, room):
+async def release_control(ws, room: Room):
     with room.controller_lock:
-        if room.controller is ws:
-            subs = room.channel.subscribers
-            if len(subs) > 0:
-                room.controller = subs[0]
-                await room.controller.send(make_message(Message.OBTAIN_CONTROL))
-            else:
-                room.controller = None
+        if room.controller is not None and room.controller.ws is ws:
+            room.controller = next(room.channel.get_player_enabled_subscribers(), None)
+            if room.controller is not None:
+                await room.controller.ws.send(make_message(Message.OBTAIN_CONTROL))
             await ws.send(make_message(Message.RELEASE_CONTROL))
 
 
@@ -226,14 +234,6 @@ async def on_connect(ws, path):
         rooms[path] = Room()
     room = rooms[path]
     room.channel.subscribe(ws)
-    with room.controller_lock:
-        if room.controller is None:
-            await obtain_control(ws, room)
-            # with room.playback.lock:
-            #     if room.playback.get_state() == PlayerState.WAITING_FOR_CLIENTS:
-            #         room.playback.set_state(PlayerState.PLAYING)
-            #         # TODO maybe send a play message on channel.
-            #         # await ws.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PLAY}))
 
 
 async def on_disconnect(ws, path):
@@ -249,6 +249,7 @@ def make_resolver():
     resolver = Resolver()
     resolver.register(Message.STATE, request_state_processor)
     resolver.register(Message.LIST_OPERATION, request_list_operation_processor)
+    resolver.register(Message.PLAYER_ENABLED, player_enabled_processor)
     resolver.register(Message.OBTAIN_CONTROL, obtain_control_processor)
     resolver.register(Message.RELEASE_CONTROL, release_control_processor)
     resolver.register(Message.SONG_END, song_end_processor)
@@ -263,6 +264,7 @@ def make_resolver():
 def init_rooms():
     # rooms["main"] = Room()
     pass
+
 
 if __name__ == "__main__":
     player_resolver = make_resolver()
