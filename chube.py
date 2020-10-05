@@ -3,7 +3,6 @@ from typing import Optional, Iterator, Dict, List
 
 import sys
 from itertools import cycle
-from websockets import WebSocketServerProtocol
 
 import chube_search
 from channel import Channel, Subscriber
@@ -46,7 +45,7 @@ class Chueue:
     def pop(self):
         with self:
             if len(self._queue) > 0:
-                song_id = self._queue.pop()
+                song_id = self._queue.pop(0)
                 code = self._codes.pop(song_id)
                 return self.as_song(song_id, code)
             else:
@@ -164,6 +163,45 @@ async def request_list_operation_processor(ws, data, path):
         await room.channel.send(message)
 
 
+async def media_action_processor(ws, data, path):
+    room = rooms[path]
+    action = data["action"]
+    send_next = False
+    if action == "NEXT":
+        current_id = data["current_id"]
+        with room.playback.lock, room.chueue:
+            old_song_id = room.playback.get_song_id()
+            if old_song_id == current_id:
+                send_next = True
+                new_song = play_next_song(room)
+                if new_song is None:
+                    new_song_id = None
+                else:
+                    new_song_id = new_song["id"]
+        if send_next:
+            await room.channel.send(make_message(
+                Message.MEDIA_ACTION,
+                {"action": MediaAction.NEXT.name, "ended_id": old_song_id, "current_id": new_song_id}))
+
+    if action == "PLAY" or send_next:
+        send_play = False
+        with room.playback.lock:
+            if room.playback.get_state() == PlayerState.PAUSED:
+                send_play = True
+                room.playback.set_state(PlayerState.PLAYING)
+        if send_play:
+            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PLAY.name}))
+
+    if action == "PAUSE":
+        send_pause = False
+        with room.playback.lock:
+            if room.playback.get_state() == PlayerState.PLAYING:
+                send_pause = True
+                room.playback.set_state(PlayerState.PAUSED)
+        if send_pause:
+            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PAUSE.name}))
+
+
 async def obtain_control_processor(ws, data, path):
     room = rooms[path]
     await obtain_control(ws, room)
@@ -178,15 +216,21 @@ async def release_control_processor(ws, data, path):
         # TODO error here
 
 
+def play_next_song(room):
+    new_song = room.chueue.pop()
+    room.playback.set_song(new_song)
+    if new_song is None:
+        room.playback.set_state(PlayerState.LIST_END)
+    return new_song
+
+
 async def song_end_processor(ws, data, path):
     room = rooms[path]
     old_song_id = data["id"]
     with room.controller_lock, room.playback.lock:
         if room.controller is not None and ws is room.controller.ws and old_song_id == room.playback.get_song_id():
-            new_song = room.chueue.pop()
-            room.playback.set_song(new_song)
+            new_song = play_next_song(room)
             if new_song is None:
-                room.playback.set_state(PlayerState.LIST_END)
                 new_song_id = None
             else:
                 new_song_id = new_song["id"]
@@ -249,6 +293,7 @@ def make_resolver():
     resolver = Resolver()
     resolver.register(Message.STATE, request_state_processor)
     resolver.register(Message.LIST_OPERATION, request_list_operation_processor)
+    resolver.register(Message.MEDIA_ACTION, media_action_processor)
     resolver.register(Message.PLAYER_ENABLED, player_enabled_processor)
     resolver.register(Message.OBTAIN_CONTROL, obtain_control_processor)
     resolver.register(Message.RELEASE_CONTROL, release_control_processor)

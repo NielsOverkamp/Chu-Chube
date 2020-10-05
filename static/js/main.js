@@ -1,5 +1,5 @@
 import { makeMessage, Resolver } from './websocketResolver.js';
-import { ListOperationTypes, MessageTypes, PlayerState } from "./enums.js";
+import { ListOperationTypes, MessageTypes, PlayerState, MediaAction } from "./enums.js";
 
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady
 
@@ -353,6 +353,24 @@ function showPlayerPlaceholder(event) {
     showPlaceholderButton.toggleAttribute("hidden")
 }
 
+function onPlayButton(event) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, {action: MediaAction.PLAY}))
+}
+
+function onPauseButton(event) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, {action: MediaAction.PAUSE}))
+
+}
+
+function onNextButton(event) {
+    event.preventDefault();
+    if (videoPlaying !== null) {
+        socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.NEXT, current_id: videoPlaying.id }))
+    }
+}
+
 function stateProcessor(ws, data) {
     const { playing, state: newState, list } = data;
 
@@ -397,6 +415,27 @@ function listOperationProcessor(ws, data) {
     } else if (op === ListOperationTypes.MOVE) {
         const { displacement } = data
         moveVideo(id, displacement)
+    }
+}
+
+function mediaActionProcessor(ws, data) {
+    const {action, ended_id, current_id} = data;
+    if (action === MediaAction.PLAY && state === PlayerState.PAUSED) {
+        state = PlayerState.PLAYING
+        player.playVideo();
+    } else if (action === MediaAction.PAUSE && state === PlayerState.PLAYING) {
+        state = PlayerState.PAUSED
+        player.pauseVideo();
+    } else if (action === MediaAction.NEXT) {
+        if (videoPlaying !== null && videoPlaying.id === ended_id) {
+            const vid = popVideo()
+            if (vid !== undefined) {
+                playVideo(vid)
+            } else {
+                videoPlaying = null;
+                state = PlayerState.LIST_END;
+            }
+        }
     }
 }
 
@@ -494,6 +533,7 @@ function onYTDone() {
     const resolver = new Resolver()
     resolver.register(MessageTypes.STATE, stateProcessor)
     resolver.register(MessageTypes.LIST_OPERATION, listOperationProcessor)
+    resolver.register(MessageTypes.MEDIA_ACTION, mediaActionProcessor)
     resolver.register(MessageTypes.OBTAIN_CONTROL, () => setLeader(true))
     resolver.register(MessageTypes.RELEASE_CONTROL, () => setLeader(false))
     resolver.register(MessageTypes.SONG_END, songEndProcessor)
@@ -513,4 +553,7 @@ function afterStateInit() {
     document.getElementById('closePlayer').addEventListener('click', onPlayerClose)
     document.getElementById('hidePlayerPlaceholder').addEventListener('click', hidePlayerPlaceholder)
     document.getElementById('showPlayerPlaceholder').addEventListener('click', showPlayerPlaceholder)
+    document.getElementById('play-button').addEventListener('click', onPlayButton)
+    document.getElementById('pause-button').addEventListener('click', onPauseButton)
+    document.getElementById('next-button').addEventListener('click', onNextButton)
 }

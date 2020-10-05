@@ -31,7 +31,7 @@
 <div class="container">
     <div class="row">
         <div class="col-xl-6 col-sm-12">
-            <div class="row" >
+            <div class="row">
                 <form hidden id="addVideoForm" class="form-inline my-4">
                     <div class="form-group">
                         <label for="addVideo">Add Video</label>
@@ -66,21 +66,34 @@
                     <button class="btn btn-link btn-sm text-secondary" id="showPlayerPlaceholder" hidden>Show</button>
                     <div id="playerPlaceholder" class="d-flex justify-content-center my-4">
                         <div>
-                            <button class="btn btn-outline-secondary" id="startPlayerButton">Start Player</button><br/>
-                            <button class="btn btn-link btn-sm small text-secondary" id="hidePlayerPlaceholder" style="width:100%">Hide</button>
+                            <button class="btn btn-outline-secondary" id="startPlayerButton">Start Player</button>
+                            <br/>
+                            <button class="btn btn-link btn-sm small text-secondary" id="hidePlayerPlaceholder"
+                                    style="width:100%">Hide
+                            </button>
                         </div>
                     </div>
                     <div id="playerContainer" class="py-4" hidden>
-                        <div class="row justify-content-between">
-                            <span class="col-2"><button id="leader-button"
-                                      class="btn btn-outline-secondary disabled">No connection</button></span>
+                        <div class="row">
+                            <div class="btn-toolbar col-11">
+                                <div class="btn btn-group">
+                                    <button id="leader-button" class="btn btn-outline-secondary disabled">
+                                        No connection
+                                    </button>
+                                </div>
+                                <div class="btn btn-group">
+                                    <button id="play-button" class="btn btn-outline-secondary"><i class="fa fa-play"></i></button>
+                                    <button id="pause-button" class="btn btn-outline-secondary"><i class="fa fa-pause"></i></button>
+                                    <button id="next-button" class="btn btn-outline-secondary"><i class="fa fa-forward"></i></button>
+                                </div>
+                            </div>
                             <span class="col-1">
                                 <a href="#" id="closePlayer">
                                     <i class="fa fa-times"></i>
                                 </a>
                             </span>
                         </div>
-                        <div id="player" class="pt-4"></div>
+                        <div id="player" class="pt-2"></div>
                     </div>
                 </div>
             </div>
@@ -100,7 +113,8 @@
                                     <span class="videoListCardDescription"></span>
                                 </div>
                                 <div class="col-1">
-                                    <button class="videoListCardDelete btn btn-outline-danger"><i class="fa fa-trash-alt"></i></button>
+                                    <button class="videoListCardDelete btn btn-outline-danger"><i
+                                        class="fa fa-trash-alt"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +124,8 @@
         </div>
     </div>
 </div>
-<footer class="footer mb-4"><a href="https://github.com/NielsOverkamp/ChuChube">Made by Niels Overkamp</a>&nbsp·&nbsp<a href="http://joetoep.student.utwente.nl">Based on JoeToep</a></footer>
+<footer class="footer mb-4"><a href="https://github.com/NielsOverkamp/ChuChube">Made by Niels Overkamp</a>&nbsp·&nbsp<a
+    href="http://joetoep.student.utwente.nl">Based on JoeToep</a></footer>
 <script src="js/main.js" type="module"></script>
 </body>
 
