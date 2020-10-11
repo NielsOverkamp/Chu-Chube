@@ -108,10 +108,8 @@
                     </div>
                     <div id="playerPlaceholder2" hidden>
                         Player (and everything else) has been hidden by the benevolent DM to be not so distracting.
-                        <a href="#" onclick="document.getElementById('playerContainer').removeAttribute('hidden');
-                            window.setTimeout(function faa() {
-                                document.getElementById('playerContainer').setAttribute('hidden', true)}, 1e4)
-                        ">Click here</a> to temporarily show if you want to adjust some youtube settings
+                        <a href="#" onclick="document.getElementById('playerContainer').toggleAttribute('hidden');">Click here</a>
+                        to hide or show the player if you want to adjust some youtube settings
                     </div>
                 </div>
             </div>

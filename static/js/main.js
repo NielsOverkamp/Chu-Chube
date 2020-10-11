@@ -674,3 +674,7 @@ function afterStateInit() {
     document.getElementById('repeat-button').addEventListener('click', onRepeatButton)
     document.getElementById('clearAllButton').addEventListener('click', onClearAllButton)
 }
+
+window.claimLeader = function () {
+    socket.send(makeMessage(MessageTypes.OBTAIN_CONTROL))
+}
