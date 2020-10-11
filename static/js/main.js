@@ -41,6 +41,10 @@ function onPlayerReady(event) {
     event.target.seekTo(0);
     if (state === PlayerState.PLAYING) {
         event.target.playVideo();
+    } else if (state === PlayerState.PAUSED) {
+        event.target.pauseVideo();
+    } else if (state === PlayerState.LIST_END) {
+        event.target.stopVideo();
     }
 }
 
