@@ -18,10 +18,12 @@ class Channel:
         self.subscribers = dict()
 
     def subscribe(self, ws: WebSocketServerProtocol):
-        self.subscribers[ws] = (Subscriber(ws))
+        if ws not in self.subscribers:
+            self.subscribers[ws] = (Subscriber(ws))
 
     def unsubscribe(self, ws: WebSocketServerProtocol):
-        self.subscribers.pop(ws)
+        if ws in self.subscribers:
+            self.subscribers.pop(ws)
 
     def get_player_enabled_subscribers(self):
         return filter(lambda s: s.player_enabled, self.subscribers.values())
@@ -31,4 +33,5 @@ class Channel:
             if sub.ws.open:
                 await sub.ws.send(message)
             else:
+                print("closed ws still in channel")
                 self.unsubscribe(sub.ws)
