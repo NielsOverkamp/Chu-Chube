@@ -36,3 +36,9 @@ class PlayerState(Enum):
     PLAYING = "PLAYING"
     PAUSED = "PAUSED"
     LIST_END = "LIST_END"
+
+
+class YoutubeResourceType(Enum):
+    VIDEO = "youtube#video"
+    PLAYLIST = "youtube#playlist"
+    CHANNEL = "youtube#channel"

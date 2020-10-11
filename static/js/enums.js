@@ -31,3 +31,8 @@ export const PlayerState = {
     LIST_END: "LIST_END",
 }
 
+export const YoutubeResourceType = {
+    VIDEO: "youtube#video",
+    PLAYLIST: "youtube#playlist",
+    CHANNEL: "youtube#channel",
+}

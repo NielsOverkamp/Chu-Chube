@@ -17,7 +17,9 @@ body {
     font-family: "Open Sans", sans-serif;
 }
 
-input, select, textarea, button{font-family:inherit;}
+input, select, textarea, button {
+    font-family: inherit;
+}
 
 #logo {
     position: absolute;
@@ -60,9 +62,38 @@ input, select, textarea, button{font-family:inherit;}
     text-overflow: ellipsis;
 }
 
+.thumbnailContainer {
+    position: relative;
+    width: 120px;
+    height: 90px;
+}
+
+.thumbnailImage {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0
+}
+
+.thumbnailPlaylistOverlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 50px;
+    background: rgba(0,0,0, 0.8);
+    text-align: center;
+}
+
+.thumbnailPlaylistOverlay .fa {
+    color: #eeeeee;
+    padding-top: 38px;
+}
+
 .absoluteCenter {
     position: absolute;
-    top:0;
+    top: 0;
     bottom: 0;
     left: 0;
     right: 0;
