@@ -14,6 +14,7 @@ export const ListOperationTypes = {
     ADD: "ADD",
     DEL: "DEL",
     MOVE: "MOVE",
+    CLEAR: "CLEAR",
 }
 
 

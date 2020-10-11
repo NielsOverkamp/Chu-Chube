@@ -23,6 +23,7 @@ class QueueOp(Enum):
     ADD = "ADD"  # ADD <code> -> <id>
     DEL = "DEL"  # DEL <id>
     MOVE = "MOVE"  # MOVE <id> <displacement>
+    CLEAR = "CLEAR"
 
 
 class MediaAction(Enum):

@@ -195,11 +195,13 @@ function setLeader(b) {
             playerContainer.children[0].setAttribute("hidden", true)
             queueElement.setAttribute("hidden" ,true)
             document.getElementById("searchVideoForm").setAttribute("hidden", true)
+            document.getElementById("clearAllButton").setAttribute("hidden", true)
         } else {
             playerContainer.removeAttribute("hidden")
             playerContainer.children[0].removeAttribute("hidden")
             queueElement.removeAttribute("hidden")
             document.getElementById("searchVideoForm").removeAttribute("hidden")
+            document.getElementById("clearAllButton").removeAttribute("hidden")
         }
     }
 }
@@ -412,6 +414,11 @@ function onRepeatButton(event) {
     socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.REPEAT, enable: !repeat }))
 }
 
+function onClearAllButton(event){
+    event.preventDefault()
+    socket.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.CLEAR }))
+}
+
 function stateProcessor(ws, data) {
     const { playing, state: newState, lists } = data;
     const { next, previous } = lists
@@ -482,6 +489,13 @@ function listOperationProcessor(ws, data) {
         for (const { id, displacement } of items) {
             moveVideo(id, displacement)
         }
+    } else if (op === ListOperationTypes.CLEAR) {
+        videos = []
+        if (videosPlayed) {
+            videosPlayed = []
+        }
+        queueElement.innerHTML = ''
+        queueElement.appendChild(queueLine)
     }
 }
 
@@ -494,13 +508,16 @@ function mediaActionProcessor(ws, data) {
         state = PlayerState.PAUSED
         player.pauseVideo();
     } else if (action === MediaAction.NEXT) {
-        if (videoPlaying !== null && videoPlaying.id === ended_id) {
+        if (videoPlaying !== null && videoPlaying.id === ended_id)  {
             const vid = popVideo()
             if (vid !== undefined) {
                 playVideo(vid)
             } else {
                 videoPlaying = null;
                 state = PlayerState.LIST_END;
+                if (player) {
+                    player.stopVideo();
+                }
             }
         }
     } else if (action === MediaAction.REPEAT) {
@@ -655,4 +672,5 @@ function afterStateInit() {
     document.getElementById('pause-button').addEventListener('click', onPauseButton)
     document.getElementById('next-button').addEventListener('click', onNextButton)
     document.getElementById('repeat-button').addEventListener('click', onRepeatButton)
+    document.getElementById('clearAllButton').addEventListener('click', onClearAllButton)
 }

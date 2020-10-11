@@ -38,6 +38,13 @@ class Chueue:
             self._queue.remove(song_id)
             self._codes.pop(song_id)
 
+    def clear(self):
+        with self:
+            self._queue.clear()
+            if self._repeat_enabled:
+                self._played_queue.clear()
+            self._codes.clear()
+
     def move(self, song_id, displacement):
         with self:
             i = self._queue.index(song_id)
@@ -64,15 +71,16 @@ class Chueue:
             return self.as_song(song_id, code)
 
     def set_repeat_enabled(self, enable, playback_song):
-        self._repeat_enabled = enable
-        if enable:
-            if playback_song is not None:
-                self._played_queue = [playback_song["id"]]
-                self._codes[playback_song["id"]] = playback_song["code"]
+        with self:
+            self._repeat_enabled = enable
+            if enable:
+                if playback_song is not None:
+                    self._played_queue = [playback_song["id"]]
+                    self._codes[playback_song["id"]] = playback_song["code"]
+                else:
+                    self._played_queue = []
             else:
-                self._played_queue = []
-        else:
-            self._played_queue = None
+                self._played_queue = None
 
     def is_repeat_enabled(self):
         return self._repeat_enabled
@@ -207,6 +215,9 @@ async def request_list_operation_processor(ws, data, path):
             message = make_message(Message.LIST_OPERATION,
                                    {"op": QueueOp.MOVE.value,
                                     "items": [{"id": song_id, "displacement": actual_displacement}]})
+    elif op == QueueOp.CLEAR.value:
+        room.chueue.clear()
+        message = make_message(Message.LIST_OPERATION, {"op": QueueOp.CLEAR.value})
 
     if message is not None:
         await room.channel.send(message)

@@ -38,7 +38,7 @@
                         <input id="addVideo" class="form-control ml-2"/>
                     </div>
                 </form>
-                <form id="searchVideoForm" class="form-inline my-4">
+                <form id="searchVideoForm" class="form-inline my-4" hidden>
                     <div class="form-group">
                         <label for="searchVideo" class="sr-only">Search</label>
                         <input id="searchVideo" class="form-control ml-2" placeholder="Search"/>
@@ -118,10 +118,10 @@
             <div class="row">
                 <div class="col-12">
                     <div id="videoListContainer">
-                        <div id="videoListToolbar">
-                            <button id="clear"
+                        <div id="videoListToolbar" hidden>
+                            <button id="clearAllButton" class="btn btn-danger" title="Clear Full Queue"><i class="fa fa-dumpster-fire"></i></button>
                         </div>
-                        <div id="videoList" class="list-group">
+                        <div id="videoList" class="list-group" hidden>
                             <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
                                 <div class="row">
                                     <div class="col-1">
