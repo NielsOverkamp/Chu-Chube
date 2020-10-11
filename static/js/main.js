@@ -188,6 +188,19 @@ function setLeader(b) {
             btn.classList.remove("disabled", "btn-outline-secondary")
         }
         isLeader = b;
+
+    //    TEMPORARY HACK CODE
+        if (!isLeader) {
+            playerContainer.setAttribute("hidden", true)
+            playerContainer.children[0].setAttribute("hidden", true)
+            queueElement.setAttribute("hidden" ,true)
+            document.getElementById("searchVideoForm").setAttribute("hidden", true)
+        } else {
+            playerContainer.removeAttribute("hidden")
+            playerContainer.children[0].removeAttribute("hidden")
+            queueElement.removeAttribute("hidden")
+            document.getElementById("searchVideoForm").removeAttribute("hidden")
+        }
     }
 }
 
@@ -320,7 +333,14 @@ function onPlayerStart(event) {
     event.preventDefault();
     playerActive = true;
     playerPlaceholderParent.removeChild(playerPlaceholder)
-    playerContainer.toggleAttribute("hidden")
+    document.getElementById("playerPlaceholder2").removeAttribute('hidden')
+    // if (!isLeader) {
+    //     playerContainer.children[0].setAttribute("hidden", true)
+    //     playerContainer.setAttribute("hidden", true)
+    // } else {
+    //     playerContainer.children[0].removeAttribute("hidden")
+    //     playerContainer.removeAttribute("hidden")
+    // }
     switch (state) {
         case PlayerState.LIST_END:
             break;

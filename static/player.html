@@ -106,26 +106,38 @@
                         </div>
                         <div id="player" class="pt-2"></div>
                     </div>
+                    <div id="playerPlaceholder2" hidden>
+                        Player (and everything else) has been hidden by the benevolent DM to be not so distracting.
+                        <a href="#" onclick="document.getElementById('playerContainer').removeAttribute('hidden');
+                            window.setTimeout(function faa() {
+                                document.getElementById('playerContainer').setAttribute('hidden', true)}, 1e4)
+                        ">Click here</a> to temporarily show if you want to adjust some youtube settings
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-12">
-                    <div id="videoList" class="list-group">
-                        <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
-                            <div class="row">
-                                <div class="col-1">
-                                    <div class="videoListCardMoveUp"><i class="fa fa-caret-up"></i></div>
-                                    <div class="videoListCardMoveDown"><i class="fa fa-caret-down"></i></div>
-                                </div>
-                                <div class="videoListCardThumbnail col-3"></div>
-                                <div class="col-7 videoListCardTextContainer">
-                                    <span class="h4 videoListCardTitle"></span><br/>
-                                    <span class="videoListCardChannel pr-3"></span>
-                                    <span class="videoListCardDescription"></span>
-                                </div>
-                                <div class="col-1">
-                                    <button class="videoListCardDelete btn btn-outline-danger"><i
-                                        class="fa fa-trash-alt"></i></button>
+                    <div id="videoListContainer">
+                        <div id="videoListToolbar">
+                            <button id="clear"
+                        </div>
+                        <div id="videoList" class="list-group">
+                            <div id="videoListCardTemplate" class="videoListCard list-group-item" hidden>
+                                <div class="row">
+                                    <div class="col-1">
+                                        <div class="videoListCardMoveUp"><i class="fa fa-caret-up"></i></div>
+                                        <div class="videoListCardMoveDown"><i class="fa fa-caret-down"></i></div>
+                                    </div>
+                                    <div class="videoListCardThumbnail col-3"></div>
+                                    <div class="col-7 videoListCardTextContainer">
+                                        <span class="h4 videoListCardTitle"></span><br/>
+                                        <span class="videoListCardChannel pr-3"></span>
+                                        <span class="videoListCardDescription"></span>
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="videoListCardDelete btn btn-outline-danger"><i
+                                            class="fa fa-trash-alt"></i></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
