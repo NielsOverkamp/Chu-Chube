@@ -2,7 +2,7 @@ const PORT = 3821
 const HOST = location.hostname
 const PATH = new URLSearchParams(location.search).get("room")
 if (PATH === "" || PATH === undefined || PATH === null) {
-    location = "/";
+    window.location = "/";
 }
 
 export class Resolver {

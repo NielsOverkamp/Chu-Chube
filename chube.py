@@ -16,11 +16,15 @@ class Chueue:
     _codes: Dict[int, str]
     _id_iter: Iterator[int]
 
+    _played_queue: Optional[List[int]]
+    _repeat_enabled: bool = False
+
     def __init__(self):
         self._lock = RLock()
         self._queue = []
         self._codes = dict()
         self._id_iter = cycle(range(sys.maxsize))
+        self._played_queue = None
 
     def add(self, code):
         with self:
@@ -44,22 +48,45 @@ class Chueue:
 
     def pop(self):
         with self:
-            if len(self._queue) > 0:
-                song_id = self._queue.pop(0)
-                code = self._codes.pop(song_id)
-                return self.as_song(song_id, code)
+            if len(self._queue) <= 0:
+                if self._repeat_enabled and len(self._played_queue) > 0:
+                    self._queue = self._played_queue
+                    self._played_queue = []
+                else:
+                    return None
+                
+            song_id = self._queue.pop(0)
+            if self._repeat_enabled:
+                code = self._codes[song_id]
+                self._played_queue.append(song_id)
             else:
-                return None
+                code = self._codes.pop(song_id)
+            return self.as_song(song_id, code)
+
+    def set_repeat_enabled(self, enable, playback_song):
+        self._repeat_enabled = enable
+        if enable:
+            if playback_song is not None:
+                self._played_queue = [playback_song["id"]]
+                self._codes[playback_song["id"]] = playback_song["code"]
+            else:
+                self._played_queue = []
+        else:
+            self._played_queue = None
+
+    def is_repeat_enabled(self):
+        return self._repeat_enabled
 
     def as_song(self, song_id, code=None):
         if code is None:
             code = self._codes[song_id]
         return {"id": song_id, "code": code}
 
-    def as_list(self):
+    def as_lists(self):
         with self:
-            res = list(map(self.as_song, self._queue))
-        return res
+            queue_as_list = list(map(self.as_song, self._queue))
+            played_as_list = list(map(self.as_song, self._played_queue)) if self.is_repeat_enabled() else None
+            return {"next": queue_as_list, "previous": played_as_list}
 
     def lock(self):
         self._lock.acquire()
@@ -128,7 +155,7 @@ rooms: Dict[str, Room] = dict()
 async def request_state_processor(ws, data, path):
     room = rooms[path]
     await ws.send(make_message(Message.STATE, {
-        "list": room.chueue.as_list(),
+        "lists": room.chueue.as_lists(),
         "playing": room.playback.get_song(),
         "state": room.playback.get_state().value
     }))
@@ -144,7 +171,8 @@ async def request_list_operation_processor(ws, data, path):
         if kind == YoutubeResourceType.VIDEO.value:
             code = data["code"]
             song_id = chueue.add(code)
-            message = make_message(Message.LIST_OPERATION, {"op": QueueOp.ADD.value, "items": [{"code": code, "id": song_id}]})
+            message = make_message(Message.LIST_OPERATION,
+                                   {"op": QueueOp.ADD.value, "items": [{"code": code, "id": song_id}]})
         elif kind == YoutubeResourceType.PLAYLIST.value:
             code = data["code"]
             playlist_items = await chube_youtube.get_all_playlist_items(code)
@@ -171,7 +199,8 @@ async def request_list_operation_processor(ws, data, path):
         actual_displacement = chueue.move(song_id, displacement)
         if actual_displacement != 0:
             message = make_message(Message.LIST_OPERATION,
-                                   {"op": QueueOp.MOVE.value, "items": [{"id": song_id, "displacement": actual_displacement}]})
+                                   {"op": QueueOp.MOVE.value,
+                                    "items": [{"id": song_id, "displacement": actual_displacement}]})
 
     if message is not None:
         await room.channel.send(message)
@@ -214,6 +243,13 @@ async def media_action_processor(ws, data, path):
                 room.playback.set_state(PlayerState.PAUSED)
         if send_pause:
             await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PAUSE.value}))
+
+    if action == MediaAction.REPEAT.value:
+        enable = data["enable"]
+        if room.chueue.is_repeat_enabled() != enable:
+            with room.chueue:
+                room.chueue.set_repeat_enabled(enable, room.playback.get_song())
+            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.REPEAT.value, "enable": enable}))
 
 
 async def obtain_control_processor(ws, data, path):

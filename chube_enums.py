@@ -30,6 +30,8 @@ class MediaAction(Enum):
     PAUSE = "PAUSE"
     NEXT = "NEXT"
     PREVIOUS = "PREVIOUS"
+    REPEAT = "REPEAT"
+    SHUFFLE = "SHUFFLE"
 
 
 class PlayerState(Enum):

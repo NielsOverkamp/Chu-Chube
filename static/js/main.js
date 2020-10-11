@@ -17,11 +17,14 @@ const PLAYER_WIDTH = 640
 const PLAYER_HEIGHT = 360
 
 let videos = null;
+let videosPlayed = null;
 
 let videoPlaying = null;
 let state = null;
 
 let isLeader = null;
+
+let repeat = false;
 
 let player = null;
 let playerActive = false;
@@ -96,11 +99,23 @@ function addVideo(code, id) {
 
 function popVideo() {
     console.log("pop", videos)
+    if (videos.length <= 0) {
+        if (videosPlayed) {
+            videos = []
+            for (const { code, id } of videosPlayed) {
+                videos.push({code, id});
+                makeQueueLine(code, id);
+            }
+            videosPlayed = []
+        } else {
+            state = PlayerState.LIST_END
+            return undefined;
+        }
+    }
     const vid = videos.shift();
-    if (vid !== undefined) {
-        queueElement.removeChild(queueElement.querySelector(".videoListCard"));
-    } else {
-        state = PlayerState.LIST_END
+    queueElement.removeChild(queueElement.querySelector(".videoListCard"));
+    if (videosPlayed) {
+        videosPlayed.push(vid);
     }
     return vid;
 }
@@ -370,15 +385,25 @@ function onNextButton(event) {
     }
 }
 
+const repeatButton = document.getElementById('repeat-button');
+
+function onRepeatButton(event) {
+    event.preventDefault();
+    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.REPEAT, enable: !repeat }))
+}
+
 function stateProcessor(ws, data) {
-    const { playing, state: newState, list } = data;
+    const { playing, state: newState, lists } = data;
+    const { next, previous } = lists
 
     videos = []
+    videosPlayed = previous
+    repeat = !!previous
     state = newState
     videoPlaying = playing
 
     const codes = []
-    for (const song of list) {
+    for (const song of next) {
         const { code, id } = song
         addVideo(code, id)
         if (!(codes.includes(code))) {
@@ -386,7 +411,16 @@ function stateProcessor(ws, data) {
         }
     }
 
-    socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: codes }))
+    for (const song of previous || []) {
+        const { code, id } = song;
+        if (!(codes.includes(code))) {
+            codes.push(code)
+        }
+    }
+
+    if (codes.length > 0) {
+        socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: codes }))
+    }
 
     if (videoPlaying !== null) {
         if (state === PlayerState.PLAYING) {
@@ -398,6 +432,10 @@ function stateProcessor(ws, data) {
     if (isLeader === null) {
         setLeader(false)
     }
+    if (repeat) {
+        repeatButton.classList.toggle('btn-outline-secondary');
+        repeatButton.classList.toggle('btn-secondary');
+    }
     afterStateInit()
 }
 
@@ -405,7 +443,7 @@ function listOperationProcessor(ws, data) {
     const { op, items } = data;
     if (op === ListOperationTypes.ADD) {
         const noCodeInfo = []
-        for (const { code, id, snippet } of items){
+        for (const { code, id, snippet } of items) {
             if (snippet !== undefined) {
                 codeInfoMap.set(code, snippet)
             } else if (!codeInfoMap.has(code)) {
@@ -414,10 +452,10 @@ function listOperationProcessor(ws, data) {
             addVideo(code, id);
         }
         if (noCodeInfo.length > 0) {
-            socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: noCodeInfo.join(',')}))
+            socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: noCodeInfo.join(',') }))
         }
     } else if (op === ListOperationTypes.DEL) {
-        for (const {id} of items) {
+        for (const { id } of items) {
             delVideo(id);
         }
     } else if (op === ListOperationTypes.MOVE) {
@@ -428,7 +466,7 @@ function listOperationProcessor(ws, data) {
 }
 
 function mediaActionProcessor(ws, data) {
-    const { action, ended_id, current_id } = data;
+    const { action, ended_id, current_id, enable } = data;
     if (action === MediaAction.PLAY && state === PlayerState.PAUSED) {
         state = PlayerState.PLAYING
         player.playVideo();
@@ -444,6 +482,13 @@ function mediaActionProcessor(ws, data) {
                 videoPlaying = null;
                 state = PlayerState.LIST_END;
             }
+        }
+    } else if (action === MediaAction.REPEAT) {
+        if (enable !== repeat) {
+            repeat = enable;
+            repeatButton.classList.toggle('btn-outline-secondary');
+            repeatButton.classList.toggle('btn-secondary');
+            videosPlayed = repeat ? (videoPlaying ? [videoPlaying] : []) : null;
         }
     }
 }
@@ -494,7 +539,6 @@ function makeSearchResult(item) {
     searchResult.setAttribute('data-youtubeID', code)
 
 
-
     function onClickHandler() {
         socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
             op: ListOperationTypes.ADD,
@@ -514,7 +558,11 @@ function makeSearchResult(item) {
     const img = document.createElement('img')
     thumbnailImage.appendChild(img)
 
-    const {url, width, height} = (thumbnails ? thumbnails["default"] : {url: "/img/no_thumbnail.png", width: 120, height: 90})
+    const { url, width, height } = (thumbnails ? thumbnails["default"] : {
+        url: "/img/no_thumbnail.png",
+        width: 120,
+        height: 90
+    })
 
     img.setAttribute('src', url)
     img.setAttribute('width', width)
@@ -586,4 +634,5 @@ function afterStateInit() {
     document.getElementById('play-button').addEventListener('click', onPlayButton)
     document.getElementById('pause-button').addEventListener('click', onPauseButton)
     document.getElementById('next-button').addEventListener('click', onNextButton)
+    document.getElementById('repeat-button').addEventListener('click', onRepeatButton)
 }

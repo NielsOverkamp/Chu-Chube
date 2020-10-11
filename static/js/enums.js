@@ -22,6 +22,8 @@ export const MediaAction = {
     PAUSE: "PAUSE",
     NEXT: "NEXT",
     PREVIOUS: "PREVIOUS",
+    REPEAT: "REPEAT",
+    SHUFFLE: "SHUFFLE",
 }
 
 
