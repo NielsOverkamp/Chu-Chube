@@ -14,10 +14,10 @@ class Resolver:
     _registerDict: dict = {}
 
     def register(self, message: Message, handler):
-        self._registerDict[message.name] = handler
+        self._registerDict[message.value] = handler
 
     def unregister(self, message):
-        return self._registerDict.pop(message.name)
+        return self._registerDict.pop(message.value)
 
     def resolve(self, data):
         message = json.loads(data)
@@ -64,7 +64,11 @@ class Resolver:
 
 
 def make_message(message_type, body=None):
-    return json.dumps({"__message": message_type.name, "__body": body})
+    return json.dumps({"__message": message_type.value, "__body": body})
+
+
+def make_message_from_json_string(message_type, raw_body: str):
+    return "{{\"__message\": \"{}\", \"__body\": {}}}".format(message_type.value, raw_body)
 
 
 def start_server(resolver: Resolver, on_new_connection, on_connection_close):

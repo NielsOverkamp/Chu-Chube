@@ -4,7 +4,7 @@ from typing import Optional, Iterator, Dict, List
 import sys
 from itertools import cycle
 
-import chube_search
+import chube_youtube
 from channel import Channel, Subscriber
 from chube_enums import *
 from chube_ws import Resolver, Message, start_server, make_message
@@ -130,7 +130,7 @@ async def request_state_processor(ws, data, path):
     await ws.send(make_message(Message.STATE, {
         "list": room.chueue.as_list(),
         "playing": room.playback.get_song(),
-        "state": room.playback.get_state().name
+        "state": room.playback.get_state().value
     }))
 
 
@@ -139,25 +139,39 @@ async def request_list_operation_processor(ws, data, path):
     chueue = room.chueue
     op = data["op"]
     message = None
-    if op == QueueOp.ADD.name:
-        code = data["code"]
-        song_id = chueue.add(code)
+    if op == QueueOp.ADD.value:
+        kind = data["kind"]
+        if kind == YoutubeResourceType.VIDEO.value:
+            code = data["code"]
+            song_id = chueue.add(code)
+            message = make_message(Message.LIST_OPERATION, {"op": QueueOp.ADD.value, "items": [{"code": code, "id": song_id}]})
+        elif kind == YoutubeResourceType.PLAYLIST.value:
+            code = data["code"]
+            playlist_items = await chube_youtube.get_all_playlist_items(code)
+            response_items = []
+            with room.chueue:
+                for item in playlist_items["items"]:
+                    code = item["snippet"]["resourceId"]["videoId"]
+                    song_id = chueue.add(code)
+                    response_items.append({"code": code, "id": song_id, "snippet": item["snippet"]})
+            message = make_message(Message.LIST_OPERATION, {"op": QueueOp.ADD.value, "items": response_items})
         with room.playback.lock:
             if room.playback.get_state() == PlayerState.LIST_END:
-                room.playback.set_state(PlayerState.PLAYING)
-                room.playback.set_song(chueue.pop())
-        message = make_message(Message.LIST_OPERATION, {"op": QueueOp.ADD.name, "code": code, "id": song_id})
-    elif op == QueueOp.DEL.name:
+                playing = chueue.pop()
+                if playing is not None:
+                    room.playback.set_state(PlayerState.PLAYING)
+                    room.playback.set_song(playing)
+    elif op == QueueOp.DEL.value:
         song_id = data["id"]
         chueue.remove(song_id)
-        message = make_message(Message.LIST_OPERATION, {"op": QueueOp.DEL.name, "id": song_id})
-    elif op == QueueOp.MOVE.name:
+        message = make_message(Message.LIST_OPERATION, {"op": QueueOp.DEL.value, "items": [{"id": song_id}]})
+    elif op == QueueOp.MOVE.value:
         song_id = data["id"]
         displacement = data["displacement"]
         actual_displacement = chueue.move(song_id, displacement)
         if actual_displacement != 0:
             message = make_message(Message.LIST_OPERATION,
-                                   {"op": QueueOp.MOVE.name, "id": song_id, "displacement": actual_displacement})
+                                   {"op": QueueOp.MOVE.value, "items": [{"id": song_id, "displacement": actual_displacement}]})
 
     if message is not None:
         await room.channel.send(message)
@@ -167,7 +181,7 @@ async def media_action_processor(ws, data, path):
     room = rooms[path]
     action = data["action"]
     send_next = False
-    if action == "NEXT":
+    if action == MediaAction.NEXT.value:
         current_id = data["current_id"]
         with room.playback.lock, room.chueue:
             old_song_id = room.playback.get_song_id()
@@ -181,25 +195,25 @@ async def media_action_processor(ws, data, path):
         if send_next:
             await room.channel.send(make_message(
                 Message.MEDIA_ACTION,
-                {"action": MediaAction.NEXT.name, "ended_id": old_song_id, "current_id": new_song_id}))
+                {"action": MediaAction.NEXT.value, "ended_id": old_song_id, "current_id": new_song_id}))
 
-    if action == "PLAY" or send_next:
+    if action == MediaAction.PLAY.value or send_next:
         send_play = False
         with room.playback.lock:
             if room.playback.get_state() == PlayerState.PAUSED:
                 send_play = True
                 room.playback.set_state(PlayerState.PLAYING)
         if send_play:
-            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PLAY.name}))
+            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PLAY.value}))
 
-    if action == "PAUSE":
+    if action == MediaAction.PAUSE.value:
         send_pause = False
         with room.playback.lock:
             if room.playback.get_state() == PlayerState.PLAYING:
                 send_pause = True
                 room.playback.set_state(PlayerState.PAUSED)
         if send_pause:
-            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PAUSE.name}))
+            await room.channel.send(make_message(Message.MEDIA_ACTION, {"action": MediaAction.PAUSE.value}))
 
 
 async def obtain_control_processor(ws, data, path):
@@ -236,10 +250,6 @@ async def song_end_processor(ws, data, path):
                 new_song_id = new_song["id"]
             await room.channel.send(
                 make_message(Message.SONG_END, {"ended_id": old_song_id, "current_id": new_song_id}))
-
-
-async def playback_processor(ws, data, path):
-    room = rooms[path]
 
 
 async def player_enabled_processor(ws, data, path):
@@ -299,7 +309,7 @@ def make_resolver():
     resolver.register(Message.RELEASE_CONTROL, release_control_processor)
     resolver.register(Message.SONG_END, song_end_processor)
 
-    search_resolver = chube_search.make_resolver()
+    search_resolver = chube_youtube.make_resolver()
 
     resolver.add_all(search_resolver)
 

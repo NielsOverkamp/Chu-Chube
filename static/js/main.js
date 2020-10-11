@@ -1,5 +1,5 @@
 import { makeMessage, Resolver } from './websocketResolver.js';
-import { ListOperationTypes, MessageTypes, PlayerState, MediaAction } from "./enums.js";
+import { ListOperationTypes, MediaAction, MessageTypes, PlayerState, YoutubeResourceType } from "./enums.js";
 
 window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady
 
@@ -207,8 +207,7 @@ function makeQueueLine(code, id, before_id) {
     newQueueLine.hidden = false;
     newQueueLine.setAttribute("data-id", id)
     if (codeInfoMap.has(code)) {
-        const { id, snippet } = codeInfoMap.get(code)
-        const { thumbnails, title, channelTitle, publishTime, description } = snippet
+        const { thumbnails, title, channelTitle, publishTime, description } = codeInfoMap.get(code)
 
         const thumbnail = newQueueLine.getElementsByClassName("videoListCardThumbnail")[0]
         const img = document.createElement('img')
@@ -273,7 +272,7 @@ function onSearch(event) {
     event.preventDefault();
     const q = event.target[0].value
     if (q !== "") {
-        socket.send(makeMessage(MessageTypes.SEARCH, {q}))
+        socket.send(makeMessage(MessageTypes.SEARCH, { q }))
     }
 }
 
@@ -313,7 +312,7 @@ function onPlayerStart(event) {
         case PlayerState.PAUSED:
             if (videoPlaying !== null) {
                 loadVideo(videoPlaying);
-            }  else {
+            } else {
                 console.error(`Invalid state: state=${state}; videoPlaying=${videoPlaying}`)
                 return
             }
@@ -321,13 +320,13 @@ function onPlayerStart(event) {
         case PlayerState.PLAYING:
             if (videoPlaying !== null) {
                 playVideo(videoPlaying);
-            }  else {
+            } else {
                 console.error(`Invalid state: state=${state}; videoPlaying=${videoPlaying}`)
                 return
             }
             break;
     }
-    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, {enabled: true}))
+    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: true }))
 }
 
 function onPlayerClose(event) {
@@ -338,7 +337,7 @@ function onPlayerClose(event) {
     if (player !== null) {
         player.pauseVideo();
     }
-    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, {enabled: false}))
+    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: false }))
 }
 
 function hidePlayerPlaceholder(event) {
@@ -355,12 +354,12 @@ function showPlayerPlaceholder(event) {
 
 function onPlayButton(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, {action: MediaAction.PLAY}))
+    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PLAY }))
 }
 
 function onPauseButton(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, {action: MediaAction.PAUSE}))
+    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PAUSE }))
 
 }
 
@@ -380,14 +379,14 @@ function stateProcessor(ws, data) {
 
     const codes = []
     for (const song of list) {
-        const {code, id} = song
+        const { code, id } = song
         addVideo(code, id)
         if (!(codes.includes(code))) {
             codes.push(code)
         }
     }
 
-    socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: codes}))
+    socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: codes }))
 
     if (videoPlaying !== null) {
         if (state === PlayerState.PLAYING) {
@@ -403,23 +402,33 @@ function stateProcessor(ws, data) {
 }
 
 function listOperationProcessor(ws, data) {
-    const { op, id } = data;
+    const { op, items } = data;
     if (op === ListOperationTypes.ADD) {
-        const { code } = data;
-        addVideo(code, id);
-        if (!codeInfoMap.has(code)) {
-            socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: code}))
+        const noCodeInfo = []
+        for (const { code, id, snippet } of items){
+            if (snippet !== undefined) {
+                codeInfoMap.set(code, snippet)
+            } else if (!codeInfoMap.has(code)) {
+                noCodeInfo.push(code)
+            }
+            addVideo(code, id);
+        }
+        if (noCodeInfo.length > 0) {
+            socket.send(makeMessage(MessageTypes.SEARCH_ID, {id: noCodeInfo.join(',')}))
         }
     } else if (op === ListOperationTypes.DEL) {
-        delVideo(id);
+        for (const {id} of items) {
+            delVideo(id);
+        }
     } else if (op === ListOperationTypes.MOVE) {
-        const { displacement } = data
-        moveVideo(id, displacement)
+        for (const { id, displacement } of items) {
+            moveVideo(id, displacement)
+        }
     }
 }
 
 function mediaActionProcessor(ws, data) {
-    const {action, ended_id, current_id} = data;
+    const { action, ended_id, current_id } = data;
     if (action === MediaAction.PLAY && state === PlayerState.PAUSED) {
         state = PlayerState.PLAYING
         player.playVideo();
@@ -471,28 +480,51 @@ searchResultTemplate.id = ""
 
 function makeSearchResult(item) {
     const { id, snippet } = item
-    const { videoId } = id
+    const { kind, videoId, channelId, playlistId } = id
     const { thumbnails, title, channelTitle, publishTime, description } = snippet
 
+    const code = kind === YoutubeResourceType.CHANNEL ? channelId :
+        kind === YoutubeResourceType.PLAYLIST ? playlistId :
+            kind === YoutubeResourceType.VIDEO ? videoId :
+                console.error(`Unknown kind ${kind}`)
+
+    if (!code) return;
+
     const searchResult = searchResultTemplate.cloneNode(true)
-    searchResult.setAttribute('data-youtubeID', videoId)
+    searchResult.setAttribute('data-youtubeID', code)
+
+
+
     function onClickHandler() {
         socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
             op: ListOperationTypes.ADD,
-            code: videoId
+            kind,
+            code
         }));
-        codeInfoMap.set(videoId, item)
+        if (kind === YoutubeResourceType.VIDEO) {
+            codeInfoMap.set(videoId, snippet)
+        }
     }
+
     searchResult.addEventListener("click", onClickHandler)
     searchResult.addEventListener("keydown", onClickHandler)
 
-    const thumbnail = searchResult.getElementsByClassName("searchResultThumbnail")[0]
+    const thumbnailContainer = searchResult.getElementsByClassName("searchResultThumbnail")[0]
+    const thumbnailImage = thumbnailContainer.getElementsByClassName("thumbnailImage")[0]
     const img = document.createElement('img')
-    thumbnail.appendChild(img)
-    img.setAttribute('src', thumbnails.default.url)
-    img.setAttribute('width', thumbnails.default.width)
-    img.setAttribute('height', thumbnails.default.height)
+    thumbnailImage.appendChild(img)
+
+    const {url, width, height} = (thumbnails ? thumbnails["default"] : {url: "/img/no_thumbnail.png", width: 120, height: 90})
+
+    img.setAttribute('src', url)
+    img.setAttribute('width', width)
+    img.setAttribute('height', height)
     img.setAttribute('alt', "")
+
+    if (kind !== YoutubeResourceType.PLAYLIST) {
+        const playlistOverlay = thumbnailContainer.getElementsByClassName("thumbnailPlaylistOverlay")[0]
+        playlistOverlay.parentElement.removeChild(playlistOverlay);
+    }
 
     searchResult.getElementsByClassName("searchResultTitle")[0].innerText = title
     searchResult.getElementsByClassName("searchResultChannel")[0].innerText = channelTitle
@@ -512,10 +544,8 @@ function searchResultProcessor(_, data) {
 
 function searchIdResultProcessor(_, data) {
     const { items } = data;
-    for (const item of items) {
-        console.log(item)
-        const code = item.id;
-        codeInfoMap.set(code, item);
+    for (const { id: code, snippet } of items) {
+        codeInfoMap.set(code, snippet);
         const lines = queueElement.querySelectorAll(`[data-youtubeID='${code}`)
         for (const line of lines) {
             if (line !== null) {
