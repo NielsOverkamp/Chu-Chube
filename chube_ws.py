@@ -47,14 +47,14 @@ class Resolver:
                 await on_close(websocket, path)
 
         async def handler(websocket, path):
-            await on_open_handler(websocket, path)
+            await on_open_handler(websocket, path.lower())
             try:
                 while True:
                     message = await websocket.recv()
                     processor, body = self.resolve(message)
-                    await processor(websocket, body, path)
+                    await processor(websocket, body, path.lower())
             except websockets.ConnectionClosed:
-                await on_close_handler(websocket, path)
+                await on_close_handler(websocket, path.lower())
 
         return handler
 
