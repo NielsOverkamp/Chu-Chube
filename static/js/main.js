@@ -473,10 +473,14 @@ function mediaActionProcessor(ws, data) {
     const { action, ended_id, current_id, enable } = data;
     if (action === MediaAction.PLAY && state === PlayerState.PAUSED) {
         state = PlayerState.PLAYING
-        player.playVideo();
+        if (playerActive) {
+            player.playVideo();
+        }
     } else if (action === MediaAction.PAUSE && state === PlayerState.PLAYING) {
         state = PlayerState.PAUSED
-        player.pauseVideo();
+        if (playerActive) {
+            player.pauseVideo();
+        }
     } else if (action === MediaAction.NEXT) {
         if (videoPlaying !== null && videoPlaying.id === ended_id) {
             const vid = popVideo()

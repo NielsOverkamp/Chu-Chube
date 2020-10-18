@@ -1,4 +1,3 @@
-import re
 from threading import RLock
 from typing import Optional, Iterator, Dict, List
 
