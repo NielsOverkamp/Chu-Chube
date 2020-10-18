@@ -41,6 +41,10 @@ function onPlayerReady(event) {
     event.target.seekTo(0);
     if (state === PlayerState.PLAYING) {
         event.target.playVideo();
+    } else if (state === PlayerState.PAUSED) {
+        event.target.pauseVideo();
+    } else if (state === PlayerState.LIST_END) {
+        event.target.stopVideo();
     }
 }
 
@@ -171,7 +175,7 @@ function loadVideo(vid) {
     }
 
     if (player === null) {
-        buildPlayer(PLAYER_WIDTH, PLAYER_HEIGHT, vid.code);
+        buildPlayer(PLAYER_HEIGHT, PLAYER_WIDTH, vid.code);
     } else {
         player.cueVideoById(vid.code, 0);
     }
@@ -481,6 +485,9 @@ function mediaActionProcessor(ws, data) {
             } else {
                 videoPlaying = null;
                 state = PlayerState.LIST_END;
+                if (player) {
+                    player.stopVideo();
+                }
             }
         }
     } else if (action === MediaAction.REPEAT) {

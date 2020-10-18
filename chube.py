@@ -64,15 +64,16 @@ class Chueue:
             return self.as_song(song_id, code)
 
     def set_repeat_enabled(self, enable, playback_song):
-        self._repeat_enabled = enable
-        if enable:
-            if playback_song is not None:
-                self._played_queue = [playback_song["id"]]
-                self._codes[playback_song["id"]] = playback_song["code"]
+        with self:
+            self._repeat_enabled = enable
+            if enable:
+                if playback_song is not None:
+                    self._played_queue = [playback_song["id"]]
+                    self._codes[playback_song["id"]] = playback_song["code"]
+                else:
+                    self._played_queue = []
             else:
-                self._played_queue = []
-        else:
-            self._played_queue = None
+                self._played_queue = None
 
     def is_repeat_enabled(self):
         return self._repeat_enabled
