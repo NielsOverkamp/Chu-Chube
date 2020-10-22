@@ -1,6 +1,8 @@
 import asyncio
 import json
 import os
+import pathlib
+import ssl
 
 import websockets
 
@@ -8,6 +10,18 @@ from chube_enums import Message
 
 PORT = os.environ.get("CHUBE_WS_PORT") or 3821  # CHU
 HOST = os.environ.get("CHUBE_WS_HOST") or "localhost"
+
+ENABLE_WSS = os.environ.get("CHUBE_NO_WSS") != 1
+CERT_PATH = os.environ.get("CHUBE_CERT_PATH")
+KEY_PATH = os.environ.get("CHUBE_KEY_PATH")
+
+if ENABLE_WSS and (CERT_PATH is None or not os.path.isfile(CERT_PATH)):
+    raise Exception("WSS is enabled but no valid certificate is provided. To disable WSS provide the CHUBE_NO_WSS=1 "
+                    "environment variable.\nProvided certificate path is {}".format(CERT_PATH))
+
+if ENABLE_WSS and (CERT_PATH is None or not os.path.isfile(KEY_PATH)):
+    raise Exception("WSS is enabled but no valid key is provided. To disable WSS provide the CHUBE_NO_WSS=1 "
+                    "environment variable.\nProvided key path is {}".format(KEY_PATH))
 
 
 class Resolver:
@@ -72,8 +86,12 @@ def make_message_from_json_string(message_type, raw_body: str):
 
 
 def start_server(resolver: Resolver, on_new_connection, on_connection_close):
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    cert_pem = pathlib.Path(CERT_PATH)
+    key_pem = pathlib.Path(KEY_PATH)
+    ssl_context.load_cert_chain(cert_pem, key_pem)
     ws_server = websockets.serve(
         resolver.make_handler(on_open=on_new_connection, on_close=on_connection_close),
-        HOST, PORT)
+        HOST, PORT, ssl=ssl_context)
     asyncio.get_event_loop().run_until_complete(ws_server)
     asyncio.get_event_loop().run_forever()

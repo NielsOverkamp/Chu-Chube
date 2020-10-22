@@ -46,7 +46,7 @@ export class Resolver {
 
     connectSocket() {
         const self = this;
-        const socket = new WebSocket(`ws://${HOST}:${PORT}/${PATH}`)
+        const socket = new WebSocket(`wss://${HOST}:${PORT}/${PATH}`)
 
         function handler(event) {
             self.resolve(event.data, socket)
