@@ -4,3 +4,12 @@
 node_modules
 dist
 .cache
+
+bootstrap-4.5.0-dist.zip
+*.iml
+*.rej
+*.orig
+fontawesome-free-5.14.0-web.zip
+/venv
+/.idea
+/__pycache__
