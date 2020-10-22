@@ -1,0 +1,150 @@
+@font-face {
+    font-family: "Kenyan Coffee";
+    src: url("../webfonts/kenyc.ttf");
+}
+
+@media (min-width: 1500px) {
+    .container, .container-sm, .container-md, .container-lg, .container-xl {
+        max-width: 1440px;
+    }
+}
+
+.container {
+    margin-top: 80px
+}
+
+body {
+    font-family: "Open Sans", sans-serif;
+}
+
+input, select, textarea, button {
+    font-family: inherit;
+}
+
+#logo {
+    position: absolute;
+    top: 20px;
+    left: 20px
+}
+
+#playerPlaceholder {
+    width: 640px;
+    height: 422px;
+    border: dashed lightgray;
+    border-radius: 5%;
+    padding-top: 192px;
+}
+
+#closePlayer {
+    font-size: 18pt;
+    color: black;
+}
+
+.searchResultChannel, .videoListCardChannel {
+    font-style: italic;
+}
+
+.searchResultDescription, .videoListCardDescription {
+    font-size: small;
+}
+
+.searchResult {
+    cursor: pointer;
+}
+
+.searchResult, .videoListCard {
+    height: 126px;
+}
+
+.searchResultTextContainer, .videoListCardTextContainer {
+    height: 101px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.thumbnailContainer {
+    position: relative;
+    width: 120px;
+    height: 90px;
+}
+
+.thumbnailImage {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0
+}
+
+.thumbnailPlaylistOverlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 50px;
+    background: rgba(0,0,0, 0.8);
+    text-align: center;
+}
+
+.thumbnailPlaylistOverlay .fa {
+    color: #eeeeee;
+    padding-top: 38px;
+}
+
+.absoluteCenter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    margin: auto;
+}
+
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    z-index: -1;
+}
+
+.footer, .footer a {
+    color: gray;
+    font-size: small;
+}
+
+.videoListCardMoveUp {
+    margin-top: 21px;
+    margin-bottom: 11px
+}
+
+.videoListCardMoveUp, .videoListCardMoveDown {
+    text-align: center;
+    font-size: small;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.videoListCardMoveUp:hover, .videoListCardMoveDown:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.videoListCardMoveUp i, .videoListCardMoveDown i {
+    margin-top: 5px
+}
+
+.videoListCardDelete {
+    margin-left: -15px
+}
+
+.videoListCardThumbnail {
+    margin-top: 5px;
+}
