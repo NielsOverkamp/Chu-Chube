@@ -27,6 +27,36 @@ input, select, textarea, button {
     left: 20px
 }
 
+@keyframes slidein {
+    from {
+        margin-left: -75%;
+    }
+    to {
+        margin-left: 80%;
+    }
+
+}
+
+.loadingLogo {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.loadingLogo {
+    animation: 3s linear infinite slidein;
+}
+
+.loadingLogoContainingBlock {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.loadingLogoContainer {
+    text-align: center;
+}
+
 .container {
     margin-bottom: 20px;
 }

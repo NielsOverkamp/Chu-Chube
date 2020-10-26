@@ -1,7 +1,6 @@
 import React from 'react';
 import { ListOperationTypes, MessageTypes, YoutubeResourceType } from "../util/enums";
 import { makeMessage } from "../util/Resolver";
-import useMapBuilder from "../util/useMapBuilder";
 
 function makeSearchResult(item, socket, addVideoInfo) {
     const { id, snippet } = item
@@ -58,7 +57,7 @@ function makeSearchResult(item, socket, addVideoInfo) {
 
 export default function SearchResults({ searchResults, socket, videoInfoMap, setVideoInfoMap }) {
 
-    const addVideoInfo = (k, v) => setVideoInfoMap(new Map(videoInfoMap).set(k,v));
+    const addVideoInfo = (k, v) => setVideoInfoMap(new Map(videoInfoMap).set(k, v));
 
     return <div className="row">
         <div className="list-group col">

@@ -37,10 +37,10 @@ export default function useRoom(path) {
         if (path !== null) {
             const ws = resolverRef.current.connectSocket(path);
             ws.addEventListener("open", function () {
+                setConnected(true);
                 ws.send(makeMessage(MessageTypes.STATE, null))
             });
             ws.addEventListener("message", console.log);
-            setConnected(true);
             return (() => {
                 ws.close();
                 setConnected(false);
