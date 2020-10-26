@@ -336,12 +336,15 @@ async def on_connect(ws, path):
         rooms[path] = Room()
     room = rooms[path]
     room.channel.subscribe(ws)
+    print("Currently {} user{} are using room {}".format(len(room.channel.subscribers),"s" if len(room.channel.subscribers) != 1 else "", path))
 
 
 async def on_disconnect(ws, path):
     room = rooms[path]
     room.channel.unsubscribe(ws)
     await release_control(ws, room)
+    print("Currently {} user{} are using room {}".format(len(room.channel.subscribers),"s" if len(room.channel.subscribers) != 1 else "", path))
+
 
 
 def make_resolver():
