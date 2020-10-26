@@ -56,7 +56,7 @@ function onPlayerStateChange(event) {
             return
         }
         if (isLeader && videoPlaying !== null) {
-            socket.send(makeMessage(MessageTypes.SONG_END, { id: videoPlaying.id }))
+            socket.ws.send(makeMessage(MessageTypes.SONG_END, { id: videoPlaying.id }))
         }
         const vid = popVideo()
         if (vid !== undefined) {
@@ -281,7 +281,7 @@ function removeQueueLine(id) {
 
 function onSubmit(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
+    socket.ws.send(makeMessage(MessageTypes.LIST_OPERATION, {
         op: ListOperationTypes.ADD,
         code: event.target[0].value
     }))
@@ -291,25 +291,25 @@ function onSearch(event) {
     event.preventDefault();
     const q = event.target[0].value
     if (q !== "") {
-        socket.send(makeMessage(MessageTypes.SEARCH, { q }))
+        socket.ws.send(makeMessage(MessageTypes.SEARCH, { q }))
     }
 }
 
 function onDeleteClick(event, id) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.DEL, id }))
+    socket.ws.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.DEL, id }))
 }
 
 function onMoveClick(event, id, displacement) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.MOVE, id, displacement }))
+    socket.ws.send(makeMessage(MessageTypes.LIST_OPERATION, { op: ListOperationTypes.MOVE, id, displacement }))
 }
 
 function onLeaderbutton(event) {
     if (isLeader) {
-        socket.send(makeMessage(MessageTypes.RELEASE_CONTROL))
+        socket.ws.send(makeMessage(MessageTypes.RELEASE_CONTROL))
     } else {
-        socket.send(makeMessage(MessageTypes.OBTAIN_CONTROL))
+        socket.ws.send(makeMessage(MessageTypes.OBTAIN_CONTROL))
     }
 }
 
@@ -345,7 +345,7 @@ function onPlayerStart(event) {
             }
             break;
     }
-    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: true }))
+    socket.ws.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: true }))
 }
 
 function onPlayerClose(event) {
@@ -356,7 +356,7 @@ function onPlayerClose(event) {
     if (player !== null) {
         player.pauseVideo();
     }
-    socket.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: false }))
+    socket.ws.send(makeMessage(MessageTypes.PLAYER_ENABLED, { enabled: false }))
 }
 
 function hidePlayerPlaceholder(event) {
@@ -373,19 +373,19 @@ function showPlayerPlaceholder(event) {
 
 function onPlayButton(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PLAY }))
+    socket.ws.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PLAY }))
 }
 
 function onPauseButton(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PAUSE }))
+    socket.ws.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.PAUSE }))
 
 }
 
 function onNextButton(event) {
     event.preventDefault();
     if (videoPlaying !== null) {
-        socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.NEXT, current_id: videoPlaying.id }))
+        socket.ws.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.NEXT, current_id: videoPlaying.id }))
     }
 }
 
@@ -393,7 +393,7 @@ const repeatButton = document.getElementById('repeat-button');
 
 function onRepeatButton(event) {
     event.preventDefault();
-    socket.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.REPEAT, enable: !repeat }))
+    socket.ws.send(makeMessage(MessageTypes.MEDIA_ACTION, { action: MediaAction.REPEAT, enable: !repeat }))
 }
 
 function stateProcessor(ws, data) {
@@ -423,7 +423,7 @@ function stateProcessor(ws, data) {
     }
 
     if (codes.length > 0) {
-        socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: codes }))
+        socket.ws.send(makeMessage(MessageTypes.SEARCH_ID, { id: codes }))
     }
 
     if (videoPlaying !== null) {
@@ -456,7 +456,7 @@ function listOperationProcessor(ws, data) {
             addVideo(code, id);
         }
         if (noCodeInfo.length > 0) {
-            socket.send(makeMessage(MessageTypes.SEARCH_ID, { id: noCodeInfo.join(',') }))
+            socket.ws.send(makeMessage(MessageTypes.SEARCH_ID, { id: noCodeInfo.join(',') }))
         }
     } else if (op === ListOperationTypes.DEL) {
         for (const { id } of items) {
@@ -551,7 +551,7 @@ function makeSearchResult(item) {
 
 
     function onClickHandler() {
-        socket.send(makeMessage(MessageTypes.LIST_OPERATION, {
+        socket.ws.send(makeMessage(MessageTypes.LIST_OPERATION, {
             op: ListOperationTypes.ADD,
             kind,
             code
@@ -630,7 +630,7 @@ function onYTDone() {
     resolver.register(MessageTypes.SEARCH_ID, searchIdResultProcessor)
     socket = resolver.connectSocket()
     socket.addEventListener("open", function () {
-        socket.send(makeMessage(MessageTypes.STATE, null))
+        socket.ws.send(makeMessage(MessageTypes.STATE, null))
     })
 }
 

@@ -13,25 +13,26 @@ export const defaultRoom = {
     controller: {
         isMe: false,
     },
+    videoInfoMap: new Map(),
 }
 
 export const Chueue = {
-    add: function ({ queue, ...rest }, ...songs) {
+    add: function ({ queue, ...rest }, songs) {
         return {
-            queue: queue + songs,
+            queue: queue.concat(songs),
             ...rest
         }
     },
 
-    remove: function ({ queue, ...rest }, ...ids) {
+    remove: function ({ queue, ...rest }, ids) {
         return {
-            queue: queue.filter(({ id }) => !ids.contains(id)),
+            queue: queue.filter(({ id }) => !ids.includes(id)),
             ...rest
         }
     },
 
     move: function ({ queue, ...rest }, displacement, id) {
-        const i = queue.findIndex(({ qId }) => qId === id)
+        const i = queue.findIndex(({ id: qId }) => qId === id)
         const song = queue[i]
         const new_i = i + displacement
         const temp_queue = queue.slice(0, i).concat(queue.slice(i + 1))
@@ -45,12 +46,37 @@ export const Chueue = {
         if (queue.length <= 0) {
             if (repeatEnabled && playedQueue.length > 0) {
                 return {
-                    song: playedQueue[playedQueue.length - 1],
+                    song: playedQueue[0],
                     chueue: {
-                        queue: playedQueue.slice(0, -1),
-                        playedQueue: [],
+                        queue: playedQueue.slice(1),
+                        playedQueue: playedQueue.slice(0, 1),
                         repeatEnabled,
                         ...rest
+                    }
+                }
+            } else {
+                return {
+                    song: null,
+                    chueue: { queue, playedQueue, repeatEnabled, ...rest }
+                }
+            }
+        } else {
+            if (repeatEnabled) {
+                return {
+                    song: queue[0],
+                    chueue: {
+                        queue: queue.slice(1),
+                        playedQueue: playedQueue.concat([queue[0]]),
+                        repeatEnabled,
+                        ...rest
+                    }
+                }
+            } else {
+                return {
+                    song: queue[0],
+                    chueue: {
+                        queue: queue.slice(1),
+                        playedQueue, repeatEnabled, ...rest
                     }
                 }
             }

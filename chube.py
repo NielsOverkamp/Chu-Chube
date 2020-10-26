@@ -271,7 +271,6 @@ async def release_control_processor(ws, data, path):
         await release_control(ws, room)
     else:
         pass
-        # TODO error here
 
 
 def play_next_song(room):
@@ -308,6 +307,7 @@ async def player_enabled_processor(ws, data, path):
         await release_control(ws, room)
 
 
+# TODO change OBTAIN_CONTROL en RELEASE_CONTROL to one message
 # TODO There is some potential concurrent bug here, when the controller loses/releases control right before a song end.
 async def obtain_control(ws, room: Room):
     with room.controller_lock:

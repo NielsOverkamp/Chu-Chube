@@ -1,6 +1,6 @@
 @font-face {
     font-family: "Kenyan Coffee";
-    src: url("../webfonts/kenyc.ttf");
+    src: url("./../webfonts/kenyc.ttf");
 }
 
 @media (min-width: 1500px) {
@@ -21,23 +21,43 @@ input, select, textarea, button {
     font-family: inherit;
 }
 
-#logo {
+.navBarLogo {
     position: absolute;
     top: 20px;
     left: 20px
 }
 
-#playerPlaceholder {
-    width: 640px;
-    height: 422px;
-    border: dashed lightgray;
-    border-radius: 5%;
-    padding-top: 192px;
+.container {
+    margin-bottom: 20px;
 }
 
-#closePlayer {
+.playerPlaceholder {
+    border: dashed lightgray;
+    border-radius: 5%;
+    padding-top: 22%;
+}
+
+.playerContainer {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+}
+
+.playerContainer iframe, .playerContainer .playerPlaceholder {
+    position: absolute;
+    top: 0;
+    /*left: 0;*/
+    width: 100%;
+    height: 100%
+}
+
+.closePlayer {
     font-size: 18pt;
     color: black;
+    padding: 0 12px;
 }
 
 .searchResultChannel, .videoListCardChannel {

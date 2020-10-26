@@ -10,7 +10,6 @@ export class Resolver {
     }
 
     register(message, handler) {
-        console.log("register", message, handler)
         this.registerMap.set(message, handler)
     }
 
@@ -47,6 +46,7 @@ export class Resolver {
 
     connectSocket(path) {
         this.websocket = new WebSocket(`wss://${HOST}:${PORT}/${path}`)
+        window.socket = this.websocket;
         return this.websocket
     }
 
