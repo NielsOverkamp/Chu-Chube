@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PlayerState, YoutubePlayerState } from "../util/enums";
+import LoadingLogo from "./LoadingLogo";
 
 export default function YoutubePlayer({ playback, onSongEnd }) {
     const { song, state } = playback;
@@ -128,10 +129,16 @@ export default function YoutubePlayer({ playback, onSongEnd }) {
         <div className="playerContainer" hidden={!playerConnected || song === null}>
             <div id={id}/>
         </div>
-        <div className="playerContainer" hidden={playerConnected && song !== null} style={{textAlign: "center"}}>
+        {song === null && <div className="playerContainer" style={{ textAlign: "center" }}>
             <div className="d-flex justify-content-center playerPlaceholder">
                 <h5 className="text-secondary pt-2">Use the search to add a song to the queue</h5>
             </div>
+        </div>}
+        {song !== null && !playerConnected && <div className="playerContainer">
+            <div style={{ paddingTop: "14%" }}>
+                <LoadingLogo/>
+            </div>
         </div>
+        }
     </div>
 }
