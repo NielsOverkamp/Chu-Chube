@@ -25,7 +25,7 @@ export default function Search({ resolver, socket, videoInfoMap, setVideoInfoMap
             <form id="searchVideoForm" className="form-inline my-4" onSubmit={search}>
                 <div className="form-group">
                     <label htmlFor="searchVideo" className="sr-only">Search</label>
-                    <input id="searchVideo" className="form-control ml-2" placeholder="Search Video"/>
+                    <input id="searchVideo" className="form-control" placeholder="Search Video"/>
                 </div>
             </form>
         </div>
