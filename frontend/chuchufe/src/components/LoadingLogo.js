@@ -1,12 +1,11 @@
 import React from "react";
-import bg from '../img/icon-bg.svg'
-import train from '../img/icon-train.svg'
 
-export default function LoadingLogo() {
-    return <div className="loadingLogoContainer">
+export default function LoadingLogo({scale}) {
+    const scaleFactor = scale === undefined ? 1 : scale;
+    return <div className="loadingLogoContainer" style={{fontSize: `${scaleFactor*80}pt`}}>
         <div className="loadingLogoContainingBlock">
-            <img className="loadingLogoBg" src={bg} alt="loading icon"/>
-            <img className="loadingLogo" src={train} alt=""/>
+            <i className="loadingLogoBg ccf ccf-logo-bg text-chuchube-red"/>
+            <i className="loadingLogo ccf ccf-logo-train text-white" style={{fontSize: `${scaleFactor*44}pt`}}/>
         </div>
     </div>
 }

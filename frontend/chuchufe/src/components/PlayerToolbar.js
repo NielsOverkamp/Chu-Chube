@@ -66,7 +66,7 @@ export default function PlayerToolbar({ playback, repeatEnabled, playerEnabled, 
                             isController ? "Leader" : "Listener"}
                 </button>
             </div>
-            <div className="btn-group mr-2">
+            <div className="btn-group mr-2" >
                 <button className={`btn ${onButtonClass(state === PlayerState.PLAYING)}`}
                         onClick={onPlayClick}>
                     <i className="fa fa-play"/></button>
@@ -78,7 +78,8 @@ export default function PlayerToolbar({ playback, repeatEnabled, playerEnabled, 
             </div>
             <div className="btn-group mr-2" title="repeat">
                 <button className={`btn ${onButtonClass(repeatEnabled)}`} onClick={onRepeatClick}>
-                    <i className="fa fa-redo-alt"/></button>
+                    <i className="ccf ccf-repeat alignMiddle"/>
+                </button>
             </div>
         </div>
         {playerEnabled &&

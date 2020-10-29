@@ -27,12 +27,21 @@ input, select, textarea, button {
     left: 20px
 }
 
+.text-chuchube-red {
+    color: #ff0000ff;
+}
+
+.ccf .alignMiddle {
+    vertical-align: middle;
+    margin-top: -20%;
+}
+
 @keyframes slidein {
     from {
-        margin-left: -75%;
+        margin-left: -90%;
     }
     to {
-        margin-left: 80%;
+        margin-left: 100%;
     }
 
 }
@@ -40,17 +49,27 @@ input, select, textarea, button {
 .loadingLogo {
     position: absolute;
     left: 0;
+    top: 22%;
+    font-size: 44pt;
+}
+
+.loadingLogoBg {
+    position: absolute;
+    left: 0;
     top: 0;
 }
 
 .loadingLogo {
-    animation: 3s linear infinite slidein;
+    animation: 1.5s cubic-bezier(0.4, 1.41, 0.68, -0.14) infinite slidein;
 }
+
 
 .loadingLogoContainingBlock {
     position: relative;
     overflow: hidden;
     display: inline-block;
+    width: 1em;
+    height: 1em;
 }
 
 .loadingLogoContainer {

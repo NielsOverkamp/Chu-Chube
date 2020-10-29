@@ -4,6 +4,7 @@ import './css/fontawesome.css';
 import './css/solid.css';
 import './css/bootstrap/bootstrap.css';
 import './css/main.css';
+import './css/ChuChubeFont.css'
 import useRoom from "./util/useRoom";
 import ChooseRoom from "./components/ChooseRoom";
 import Room from "./components/Room";
