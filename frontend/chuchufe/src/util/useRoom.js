@@ -8,6 +8,8 @@ import mediaActionProcessor from "./processors/mediaActionProcessor";
 import controlProcessor from "./processors/controlProcessor";
 import searchIdResultProcessor from "./processors/searchIdResultProcessor";
 
+const RETRY_TIMEOUT = 1000;
+
 function registerHandlers(resolver) {
     resolver.register(MessageTypes.STATE, stateProcessor);
     resolver.register(MessageTypes.LIST_OPERATION, listOperationProcessor);
@@ -33,20 +35,35 @@ export default function useRoom(path) {
     const resolverRef = useRef(new Resolver());
     const [connected, setConnected] = useState(false);
 
+    const [tryConnect, setTryReconnect] = useState({ go: true });
+
     useEffect(() => {
         if (path !== null) {
-            const ws = resolverRef.current.connectSocket(path);
-            ws.addEventListener("open", function () {
-                setConnected(true);
-                ws.send(makeMessage(MessageTypes.STATE, null))
-            });
-            ws.addEventListener("message", console.log);
-            return (() => {
-                ws.close();
-                setConnected(false);
-            })
+            if (tryConnect.go) {
+                const ws = resolverRef.current.connectSocket(path);
+                ws.addEventListener("open", function () {
+                    setConnected(true);
+                    ws.send(makeMessage(MessageTypes.STATE, null))
+                });
+                ws.addEventListener("message", (...args) => console.warn("Received message before handler could be set", args));
+                const setRetryFlag = () => {
+                    const code = setTimeout(() => setTryReconnect({ go: true }), RETRY_TIMEOUT)
+                    setTryReconnect({ code, go: false })
+                }
+                ws.addEventListener("error", setRetryFlag)
+                ws.addEventListener("close", setRetryFlag)
+                return (() => {
+                    setConnected(false);
+                    ws.removeEventListener("close", setRetryFlag);
+                    ws.close();
+                })
+            } else {
+                return () => {
+                    clearTimeout(tryConnect.code)
+                }
+            }
         }
-    }, [path])
+    }, [path, tryConnect])
 
     useEffect(() => {
         const currentResolver = resolverRef.current;
@@ -67,7 +84,7 @@ export default function useRoom(path) {
         return () => unRegisterHandlers(resolver)
     }, [connected, resolverRef])
 
-    const resolver =resolverRef.current;
+    const resolver = resolverRef.current;
     const websocket = resolver.websocket;
 
     return {

@@ -49,8 +49,8 @@ function App() {
     } else {
         return <Fragment>
             <NavBar exitRoom={() => setPath(null)}/>
-            <div className="absoluteCenter" style={{height: "200px"}}>
-                <LoadingLogo/>
+            <div className="absoluteCenter" style={{height: "300px"}}>
+                <LoadingLogo scale={2}/>
             </div>
         </Fragment>
     }

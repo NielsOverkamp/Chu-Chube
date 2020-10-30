@@ -83,7 +83,7 @@ input, select, textarea, button {
 .playerPlaceholder {
     border: dashed lightgray;
     border-radius: 5%;
-    padding-top: 22%;
+    padding-top: 23%;
 }
 
 .playerContainer {
