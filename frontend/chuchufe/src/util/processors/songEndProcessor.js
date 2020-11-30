@@ -26,13 +26,13 @@ export default function songEndProcessor(ws, data, [{ playback, chueue, controll
         //     player.seekTo(RTT_ESTIMATE + ALLOWED_AHEAD, true)
         // }
     } else {
-        console.error("Difficult state reached. Reset protocol not implemented. Either to far ahead, behind or state inconsistency", ended_id, current_id, videoPlaying)
+        console.error("Difficult state reached. Reset protocol not implemented. Either to far ahead, behind or state inconsistency", ended_id, current_id, song)
     }
 
-    return {
+    setRoom({
         chueue: {...chueue, ...newChueue},
         playback: {...playback, ...newPlayback},
         controller, ...rest
-    }
+    })                                                                                                                              
 
 }

@@ -7,12 +7,14 @@ import listOperationProcessor from "./processors/listOperationProcessor";
 import mediaActionProcessor from "./processors/mediaActionProcessor";
 import controlProcessor from "./processors/controlProcessor";
 import searchIdResultProcessor from "./processors/searchIdResultProcessor";
+import songEndProcessor from "./processors/songEndProcessor";
 
 const RETRY_TIMEOUT = 1000;
 
 function registerHandlers(resolver) {
     resolver.register(MessageTypes.STATE, stateProcessor);
     resolver.register(MessageTypes.LIST_OPERATION, listOperationProcessor);
+    resolver.register(MessageTypes.SONG_END, songEndProcessor)
     resolver.register(MessageTypes.MEDIA_ACTION, mediaActionProcessor);
     resolver.register(MessageTypes.OBTAIN_CONTROL, (ws, _, clientData) => controlProcessor(ws, { obtain: true }, clientData))
     resolver.register(MessageTypes.RELEASE_CONTROL, (ws, _, clientData) => controlProcessor(ws, { obtain: false }, clientData))
@@ -82,7 +84,7 @@ export default function useRoom(path) {
         const resolver = resolverRef.current
         registerHandlers(resolver)
         return () => unRegisterHandlers(resolver)
-    }, [connected, resolverRef])
+    }, [connected])
 
     const resolver = resolverRef.current;
     const websocket = resolver.websocket;
