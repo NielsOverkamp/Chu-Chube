@@ -1,5 +1,6 @@
-const PORT = 3821
+const PORT = process.env.NODE_ENV === "development" ? 38210 : 3821
 const HOST = window.location.hostname
+const PROTOCOL = process.env.NODE_ENV === "development" ? "ws" : "wss"
 
 export class Resolver {
     registerMap = null;
@@ -45,11 +46,11 @@ export class Resolver {
     }
 
     connectSocket(path) {
-        this.websocket = new WebSocket(`wss://${HOST}:${PORT}/${path}`)
+        this.websocket = new WebSocket(`${PROTOCOL}://${HOST}:${PORT}/${path}`)
         window.socket = this.websocket;
         return this.websocket
     }
-
+                                            
 }
 
 export function makeMessage(messageType, body) {

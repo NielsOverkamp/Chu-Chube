@@ -8,10 +8,10 @@ import websockets
 
 from chube_enums import Message
 
-PORT = os.environ.get("CHUBE_WS_PORT") or 3821  # CHU
+PORT = os.environ.get("CHUBE_WS_PORT") or 38210  # CHU
 HOST = os.environ.get("CHUBE_WS_HOST") or "localhost"
 
-ENABLE_WSS = os.environ.get("CHUBE_NO_WSS") != 1
+ENABLE_WSS = os.environ.get("CHUBE_NO_WSS") != '1'
 CERT_PATH = os.environ.get("CHUBE_CERT_PATH")
 KEY_PATH = os.environ.get("CHUBE_KEY_PATH")
 
@@ -86,12 +86,16 @@ def make_message_from_json_string(message_type, raw_body: str):
 
 
 def start_server(resolver: Resolver, on_new_connection, on_connection_close):
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    cert_pem = pathlib.Path(CERT_PATH)
-    key_pem = pathlib.Path(KEY_PATH)
-    ssl_context.load_cert_chain(cert_pem, key_pem)
-    ws_server = websockets.serve(
-        resolver.make_handler(on_open=on_new_connection, on_close=on_connection_close),
-        HOST, PORT, ssl=ssl_context)
+    if ENABLE_WSS:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        cert_pem = pathlib.Path(CERT_PATH)
+        key_pem = pathlib.Path(KEY_PATH)
+        ssl_context.load_cert_chain(cert_pem, key_pem)
+        ws_server = websockets.serve(
+            resolver.make_handler(on_open=on_new_connection, on_close=on_connection_close),
+            HOST, PORT, ssl=ssl_context)
+    else:
+        ws_server = websockets.serve(resolver.make_handler(on_open=on_new_connection, on_close=on_connection_close),
+                                     HOST, PORT)
     asyncio.get_event_loop().run_until_complete(ws_server)
     asyncio.get_event_loop().run_forever()
